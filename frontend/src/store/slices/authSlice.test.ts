@@ -14,7 +14,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   multiRemove: jest.fn(),
 }));
 
-import reducer, { register } from './authSlice';
+import reducer, { login, register, validateToken } from './authSlice';
 import { AuthState, User } from '@/types';
 
 const createUser = (): User => ({
@@ -48,8 +48,8 @@ const createUser = (): User => ({
       retentionDays: 30,
     },
   },
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  createdAt: '2026-04-09T00:00:00.000Z',
+  updatedAt: '2026-04-09T00:00:00.000Z',
 });
 
 const initialState: AuthState = {
@@ -85,5 +85,38 @@ describe('authSlice register flow', () => {
     expect(nextState.tokens).toBeNull();
     expect(nextState.isAuthenticated).toBe(false);
     expect(nextState.error).toBeNull();
+  });
+
+  it('keeps the authenticated session when a stale token validation resolves false after login', () => {
+    const loggedInState = reducer(
+      initialState,
+      login.fulfilled(
+        {
+          user: createUser(),
+          tokens: {
+            accessToken: 'fresh-access-token',
+            refreshToken: 'fresh-refresh-token',
+            expiresIn: 3600,
+            tokenType: 'Bearer',
+          },
+        },
+        'login-request-id',
+        {
+          email: 'user@example.com',
+          password: '12345678',
+        }
+      )
+    );
+
+    const nextState = reducer(loggedInState, validateToken.fulfilled(false, 'stale-validate-request-id'));
+
+    expect(nextState.user).toEqual(createUser());
+    expect(nextState.tokens).toEqual({
+      accessToken: 'fresh-access-token',
+      refreshToken: 'fresh-refresh-token',
+      expiresIn: 3600,
+      tokenType: 'Bearer',
+    });
+    expect(nextState.isAuthenticated).toBe(true);
   });
 });

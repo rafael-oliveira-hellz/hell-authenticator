@@ -36,7 +36,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const dispatch = useAppDispatch();
-  const { user, tokens, isAuthenticated, isLoading, error } = useAppSelector((state) => state.auth);
+  const { user, tokens, isAuthenticated, error } = useAppSelector((state) => state.auth);
 
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -47,11 +47,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (isValid) {
           await dispatch(getCurrentUser()).unwrap();
-        } else {
-          dispatch(clearAuth());
         }
       } catch {
-        dispatch(clearAuth());
+        // The validation thunk is responsible for invalid token cleanup.
       } finally {
         setIsInitialized(true);
       }
@@ -89,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     tokens,
     isAuthenticated,
-    isLoading: isLoading || !isInitialized,
+    isLoading: !isInitialized,
     error,
     login,
     logout: handleLogout,

@@ -110,8 +110,15 @@ export const validateToken = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await apiService.validateToken();
-      return response.success && response.data === true;
+      const isValid = response.success && response.data === true;
+
+      if (!isValid) {
+        await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);
+      }
+
+      return isValid;
     } catch (error) {
+      await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);
       return rejectWithValue(error instanceof Error ? error.message : 'Erro desconhecido');
     }
   }
@@ -281,16 +288,18 @@ const authSlice = createSlice({
     // Validate Token
     builder
       .addCase(validateToken.fulfilled, (state, action) => {
-        if (!action.payload) {
+        if (!action.payload && !state.tokens) {
           state.user = null;
           state.tokens = null;
           state.isAuthenticated = false;
         }
       })
       .addCase(validateToken.rejected, (state) => {
-        state.user = null;
-        state.tokens = null;
-        state.isAuthenticated = false;
+        if (!state.tokens) {
+          state.user = null;
+          state.tokens = null;
+          state.isAuthenticated = false;
+        }
       });
 
     // Check Biometric Support

@@ -18,7 +18,6 @@ import {
   loadAppSettings,
   setOnlineStatus,
 } from '@/store/slices/appSlice';
-import { getCurrentUser, validateToken } from '@/store/slices/authSlice';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,11 +51,6 @@ const AppContent: React.FC = () => {
         await dispatch(loadAppSettings()).unwrap();
         await dispatch(checkNetworkStatus()).unwrap();
         await dispatch(checkPermissions()).unwrap();
-
-        const isAuth = await dispatch(validateToken()).unwrap();
-        if (isAuth) {
-          await dispatch(getCurrentUser()).unwrap();
-        }
       } catch {
         // Inicializacao best-effort; erros individuais sao tratados nos slices.
       }

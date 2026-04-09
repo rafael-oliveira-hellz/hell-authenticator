@@ -16,6 +16,18 @@ import { login } from '@/store/slices/authSlice';
 import { useTheme } from '@/contexts/ThemeContext';
 import { LoginCredentials } from '@/types';
 
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error === 'string' && error.trim().length > 0) {
+    return error;
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
 export const LoginScreen: React.FC = () => {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
@@ -36,7 +48,7 @@ export const LoginScreen: React.FC = () => {
       const credentials: LoginCredentials = { email, password };
       await dispatch(login(credentials)).unwrap();
     } catch (error) {
-      Alert.alert('Erro', error instanceof Error ? error.message : 'Falha no login');
+      Alert.alert('Erro', getErrorMessage(error, 'Falha no login'));
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +72,7 @@ export const LoginScreen: React.FC = () => {
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>Bem-vindo de volta</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Faça login para acessar suas contas
+            Faca login para acessar suas contas
           </Text>
         </View>
 
@@ -113,7 +125,7 @@ export const LoginScreen: React.FC = () => {
         </View>
 
         <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: colors.textSecondary }]}>Não tem uma conta? </Text>
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>Nao tem uma conta? </Text>
           <TouchableOpacity testID="login-register-link" onPress={handleRegister}>
             <Text style={[styles.registerText, { color: colors.primary }]}>Cadastre-se</Text>
           </TouchableOpacity>

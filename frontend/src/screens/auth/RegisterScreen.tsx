@@ -16,6 +16,18 @@ import { register } from '@/store/slices/authSlice';
 import { useTheme } from '@/contexts/ThemeContext';
 import { RegisterData } from '@/types';
 
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error === 'string' && error.trim().length > 0) {
+    return error;
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
 export const RegisterScreen: React.FC = () => {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
@@ -35,12 +47,12 @@ export const RegisterScreen: React.FC = () => {
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Erro', 'As senhas não coincidem');
+      Alert.alert('Erro', 'As senhas nao coincidem');
       return;
     }
 
     if (!acceptTerms) {
-      Alert.alert('Erro', 'Você deve aceitar os termos de uso');
+      Alert.alert('Erro', 'Voce deve aceitar os termos de uso');
       return;
     }
 
@@ -58,7 +70,7 @@ export const RegisterScreen: React.FC = () => {
       Alert.alert('Sucesso', 'Conta criada com sucesso!');
       navigation.navigate('Login' as never);
     } catch (error) {
-      Alert.alert('Erro', error instanceof Error ? error.message : 'Falha no registro');
+      Alert.alert('Erro', getErrorMessage(error, 'Falha no registro'));
     } finally {
       setIsLoading(false);
     }
@@ -155,10 +167,10 @@ export const RegisterScreen: React.FC = () => {
                 { borderColor: colors.textSecondary },
               ]}
             >
-              {acceptTerms && <Text style={styles.checkmark}>✓</Text>}
+              {acceptTerms && <Text style={styles.checkmark}>+</Text>}
             </View>
             <Text style={[styles.termsText, { color: colors.textSecondary }]}>
-              Aceito os termos de uso e política de privacidade
+              Aceito os termos de uso e politica de privacidade
             </Text>
           </TouchableOpacity>
 
@@ -179,7 +191,7 @@ export const RegisterScreen: React.FC = () => {
         </View>
 
         <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: colors.textSecondary }]}>Já tem uma conta? </Text>
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>Ja tem uma conta? </Text>
           <TouchableOpacity testID="register-login-link" onPress={handleBackToLogin}>
             <Text style={[styles.loginText, { color: colors.primary }]}>Fazer login</Text>
           </TouchableOpacity>
