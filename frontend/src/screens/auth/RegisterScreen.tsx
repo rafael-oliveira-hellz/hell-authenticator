@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAppDispatch } from '@/store';
@@ -39,20 +39,22 @@ export const RegisterScreen: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos');
+      Alert.alert('Erro', 'Preencha todos os campos obrigatórios.');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Erro', 'As senhas nao coincidem');
+      Alert.alert('Erro', 'As senhas não coincidem.');
       return;
     }
 
     if (!acceptTerms) {
-      Alert.alert('Erro', 'Voce deve aceitar os termos de uso');
+      Alert.alert('Erro', 'Você precisa aceitar os termos para continuar.');
       return;
     }
 
@@ -67,133 +69,61 @@ export const RegisterScreen: React.FC = () => {
       };
 
       await dispatch(register(data)).unwrap();
-      Alert.alert('Sucesso', 'Conta criada com sucesso!');
+      Alert.alert('Conta criada', 'Sua conta foi criada com sucesso. Faça login para continuar.');
       navigation.navigate('Login' as never);
     } catch (error) {
-      Alert.alert('Erro', getErrorMessage(error, 'Falha no registro'));
+      Alert.alert('Erro', getErrorMessage(error, 'Falha ao criar a conta.'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleBackToLogin = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' as never }],
-    } as never);
-  };
-
   return (
-    <KeyboardAvoidingView
-      testID="register-screen"
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>Criar Conta</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Preencha os dados para criar sua conta
-          </Text>
-        </View>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.title, { color: colors.text }]}>Criar uma conta elegante e segura</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Monte seu cofre de autenticação em poucos passos.</Text>
 
-        <View style={styles.form}>
-          <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
-            <TextInput
-              testID="register-name-input"
-              style={[styles.input, { color: colors.text }]}
-              placeholder="Nome completo"
-              placeholderTextColor={colors.textSecondary}
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-            />
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Nome completo</Text>
+          <View style={[styles.inputShell, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TextInput style={[styles.input, { color: colors.text }]} placeholder="Seu nome" placeholderTextColor={colors.textSecondary} value={name} onChangeText={setName} autoCapitalize="words" />
           </View>
 
-          <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
-            <TextInput
-              testID="register-email-input"
-              style={[styles.input, { color: colors.text }]}
-              placeholder="Email"
-              placeholderTextColor={colors.textSecondary}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>E-mail</Text>
+          <View style={[styles.inputShell, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TextInput style={[styles.input, { color: colors.text }]} placeholder="voce@empresa.com" placeholderTextColor={colors.textSecondary} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
           </View>
 
-          <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
-            <TextInput
-              testID="register-password-input"
-              style={[styles.input, { color: colors.text }]}
-              placeholder="Senha"
-              placeholderTextColor={colors.textSecondary}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Senha</Text>
+          <View style={[styles.inputShell, styles.passwordShell, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TextInput style={[styles.input, styles.passwordInput, { color: colors.text }]} placeholder="Mínimo de 8 caracteres" placeholderTextColor={colors.textSecondary} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} autoCapitalize="none" />
+            <TouchableOpacity onPress={() => setShowPassword((value) => !value)} style={styles.eyeButton}>
+              <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
+            </TouchableOpacity>
           </View>
 
-          <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
-            <TextInput
-              testID="register-confirm-password-input"
-              style={[styles.input, { color: colors.text }]}
-              placeholder="Confirmar senha"
-              placeholderTextColor={colors.textSecondary}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Confirmar senha</Text>
+          <View style={[styles.inputShell, styles.passwordShell, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TextInput style={[styles.input, styles.passwordInput, { color: colors.text }]} placeholder="Repita a senha" placeholderTextColor={colors.textSecondary} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!showConfirmPassword} autoCapitalize="none" />
+            <TouchableOpacity onPress={() => setShowConfirmPassword((value) => !value)} style={styles.eyeButton}>
+              <Text style={styles.eyeIcon}>{showConfirmPassword ? '🙈' : '👁'}</Text>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            testID="register-accept-terms"
-            style={styles.termsContainer}
-            onPress={() => setAcceptTerms(!acceptTerms)}
-          >
-            <View
-              style={[
-                styles.checkbox,
-                acceptTerms && styles.checkboxChecked,
-                { borderColor: colors.textSecondary },
-              ]}
-            >
-              {acceptTerms && <Text style={styles.checkmark}>+</Text>}
+          <TouchableOpacity style={styles.termsRow} onPress={() => setAcceptTerms((value) => !value)}>
+            <View style={[styles.checkbox, { borderColor: colors.border, backgroundColor: acceptTerms ? colors.primary : colors.surface }]}>
+              {acceptTerms ? <Text style={styles.checkboxMark}>✓</Text> : null}
             </View>
-            <Text style={[styles.termsText, { color: colors.textSecondary }]}>
-              Aceito os termos de uso e politica de privacidade
-            </Text>
+            <Text style={[styles.termsText, { color: colors.textSecondary }]}>Aceito os termos de uso e a política de privacidade.</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            testID="register-submit-button"
-            style={[
-              styles.registerButton,
-              { backgroundColor: colors.primary },
-              isLoading && styles.registerButtonDisabled,
-            ]}
-            onPress={handleRegister}
-            disabled={isLoading}
-          >
-            <Text style={styles.registerButtonText}>
-              {isLoading ? 'Criando conta...' : 'Criar Conta'}
-            </Text>
+          <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }, isLoading && styles.buttonDisabled]} onPress={handleRegister} disabled={isLoading}>
+            <Text style={styles.primaryButtonText}>{isLoading ? 'Criando conta...' : 'Criar conta'}</Text>
           </TouchableOpacity>
-        </View>
 
-        <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: colors.textSecondary }]}>Ja tem uma conta? </Text>
-          <TouchableOpacity testID="register-login-link" onPress={handleBackToLogin}>
-            <Text style={[styles.loginText, { color: colors.primary }]}>Fazer login</Text>
+          <TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border }]} onPress={() => navigation.navigate('Login' as never)}>
+            <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Voltar para login</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -207,83 +137,102 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 32,
+    paddingVertical: 28,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
+  card: {
+    borderWidth: 1,
+    borderRadius: 28,
+    padding: 22,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 30,
+    fontWeight: '800',
+    lineHeight: 36,
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 18,
   },
-  form: {
-    marginBottom: 40,
+  fieldLabel: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+    marginTop: 8,
   },
-  inputContainer: {
-    borderRadius: 12,
-    marginBottom: 16,
+  inputShell: {
+    borderWidth: 1,
+    borderRadius: 18,
     paddingHorizontal: 16,
+    minHeight: 58,
+    justifyContent: 'center',
+  },
+  passwordShell: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   input: {
-    height: 50,
     fontSize: 16,
+    minHeight: 54,
   },
-  termsContainer: {
+  passwordInput: { flex: 1 },
+  eyeButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eyeIcon: { fontSize: 18 },
+  termsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginTop: 18,
+    marginBottom: 20,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: 1,
     marginRight: 12,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: '#D90429',
-  },
-  checkmark: {
+  checkboxMark: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '800',
   },
   termsText: {
-    fontSize: 14,
     flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
   },
-  registerButton: {
-    height: 50,
-    borderRadius: 12,
-    justifyContent: 'center',
+  primaryButton: {
+    minHeight: 56,
+    borderRadius: 18,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  registerButtonDisabled: {
-    opacity: 0.6,
-  },
-  registerButtonText: {
+  primaryButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  secondaryButton: {
+    minHeight: 54,
+    borderRadius: 18,
+    borderWidth: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
   },
-  footerText: {
-    fontSize: 14,
+  secondaryButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
-  loginText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
+  buttonDisabled: { opacity: 0.65 },
 });

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
+﻿import React from 'react';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export const AboutScreen: React.FC = () => {
@@ -110,7 +110,7 @@ export const AboutScreen: React.FC = () => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Informações</Text>
-        
+
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Desenvolvedor</Text>
           <Text style={styles.infoValue}>Hell Team</Text>
@@ -129,36 +129,26 @@ export const AboutScreen: React.FC = () => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Links</Text>
-        
-        <TouchableOpacity 
-          style={styles.infoItem}
-          onPress={() => openLink('https://github.com/hell-team/hell-authenticator')}
-        >
+
+        <TouchableOpacity style={styles.infoItem} onPress={() => openLink('https://github.com/hell-team/hell-authenticator')}>
           <Text style={styles.infoLabel}>GitHub</Text>
           <Text style={[styles.infoValue, styles.link]}>Ver código</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.infoItem}
-          onPress={() => openLink('https://hell-authenticator.com/privacy')}
-        >
+        <TouchableOpacity style={styles.infoItem} onPress={() => openLink('https://hell-authenticator.com/privacy')}>
           <Text style={styles.infoLabel}>Política de Privacidade</Text>
           <Text style={[styles.infoValue, styles.link]}>Ler</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.infoItem}
-          onPress={() => openLink('https://hell-authenticator.com/terms')}
-        >
+        <TouchableOpacity style={styles.infoItem} onPress={() => openLink('https://hell-authenticator.com/terms')}>
           <Text style={styles.infoLabel}>Termos de Uso</Text>
           <Text style={[styles.infoValue, styles.link]}>Ler</Text>
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Verificar Atualizações</Text>
+        <Text style={styles.buttonText}>Verificar atualizações</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 };
-

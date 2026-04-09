@@ -59,13 +59,13 @@ export const BackupSettingsScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Backup Automatico</Text>
+        <Text style={styles.sectionTitle}>Backup automático</Text>
 
         <View style={styles.settingItem}>
           <View style={styles.flexOne}>
             <Text style={styles.settingLabel}>Backup na nuvem</Text>
             <Text style={styles.settingDescription}>
-              Fazer backup automatico dos seus dados na nuvem
+              Fazer backup automático dos seus dados na nuvem
             </Text>
           </View>
           <Switch value />
@@ -83,13 +83,13 @@ export const BackupSettingsScreen: React.FC = () => {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Frequencia</Text>
+        <Text style={styles.sectionTitle}>Frequência</Text>
 
         <View style={styles.settingItem}>
           <View style={styles.flexOne}>
             <Text style={styles.settingLabel}>Backup diario</Text>
             <Text style={styles.settingDescription}>
-              Fazer backup todos os dias as 02:00
+              Fazer backup todos os dias às 02:00
             </Text>
           </View>
           <Switch value />
@@ -97,7 +97,7 @@ export const BackupSettingsScreen: React.FC = () => {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Retencao</Text>
+        <Text style={styles.sectionTitle}>Retenção</Text>
 
         <View style={styles.settingItem}>
           <View style={styles.flexOne}>
@@ -111,7 +111,7 @@ export const BackupSettingsScreen: React.FC = () => {
       </View>
 
       <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Fazer Backup Agora</Text>
+        <Text style={styles.buttonText}>Fazer backup agora</Text>
       </TouchableOpacity>
     </ScrollView>
   );

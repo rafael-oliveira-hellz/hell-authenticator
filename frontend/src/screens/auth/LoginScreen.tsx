@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAppDispatch } from '@/store';
@@ -31,15 +32,16 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
 export const LoginScreen: React.FC = () => {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos');
+      Alert.alert('Erro', 'Preencha seu e-mail e sua senha.');
       return;
     }
 
@@ -48,18 +50,10 @@ export const LoginScreen: React.FC = () => {
       const credentials: LoginCredentials = { email, password };
       await dispatch(login(credentials)).unwrap();
     } catch (error) {
-      Alert.alert('Erro', getErrorMessage(error, 'Falha no login'));
+      Alert.alert('Erro', getErrorMessage(error, 'Falha no login.'));
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleRegister = () => {
-    navigation.navigate('Register' as never);
-  };
-
-  const handleForgotPassword = () => {
-    navigation.navigate('ForgotPassword' as never);
   };
 
   return (
@@ -68,20 +62,44 @@ export const LoginScreen: React.FC = () => {
       style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>Bem-vindo de volta</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Faca login para acessar suas contas
-          </Text>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <View style={styles.heroWrap}>
+          <View style={[styles.heroGlow, isDark ? styles.heroGlowDark : styles.heroGlowLight]} />
+          <View style={[styles.heroCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.brandRow}>
+              <View style={[styles.brandBadge, { backgroundColor: colors.primary }]}>
+                <Text style={styles.brandBadgeText}>HA</Text>
+              </View>
+              <Text style={[styles.brandName, { color: colors.textSecondary }]}>Hell Authenticator</Text>
+            </View>
+
+            <Text style={[styles.title, { color: colors.text }]}>Segurança bonita, rápida e sob controle.</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Entre para acessar seus códigos, backups e conexões em nuvem com uma experiência mais refinada.</Text>
+
+            <View style={styles.metricsRow}>
+              <View style={[styles.metricCard, { backgroundColor: colors.surface }]}>
+                <Text style={[styles.metricNumber, { color: colors.text }]}>30s</Text>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>ciclo TOTP</Text>
+              </View>
+              <View style={[styles.metricCard, { backgroundColor: colors.surface }]}>
+                <Text style={[styles.metricNumber, { color: colors.text }]}>Cloud</Text>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>backup seguro</Text>
+              </View>
+            </View>
+          </View>
         </View>
 
-        <View style={styles.form}>
-          <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
+        <View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.formTitle, { color: colors.text }]}>Entrar na sua conta</Text>
+          <Text style={[styles.formSubtitle, { color: colors.textSecondary }]}>Use suas credenciais para continuar.</Text>
+
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>E-mail</Text>
+          <View style={[styles.inputShell, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TextInput
               testID="login-email-input"
               style={[styles.input, { color: colors.text }]}
-              placeholder="Email"
+              placeholder="voce@empresa.com"
               placeholderTextColor={colors.textSecondary}
               value={email}
               onChangeText={setEmail}
@@ -91,43 +109,38 @@ export const LoginScreen: React.FC = () => {
             />
           </View>
 
-          <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Senha</Text>
+          <View style={[styles.inputShell, styles.passwordShell, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TextInput
               testID="login-password-input"
-              style={[styles.input, { color: colors.text }]}
-              placeholder="Senha"
+              style={[styles.input, styles.passwordInput, { color: colors.text }]}
+              placeholder="Digite sua senha"
               placeholderTextColor={colors.textSecondary}
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={!showPassword}
               autoCapitalize="none"
             />
+            <TouchableOpacity onPress={() => setShowPassword((value) => !value)} style={styles.eyeButton}>
+              <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
+            </TouchableOpacity>
           </View>
+
+          <TouchableOpacity style={styles.forgotWrap} onPress={() => navigation.navigate('ForgotPassword' as never)}>
+            <Text style={[styles.forgotText, { color: colors.primary }]}>Esqueceu sua senha?</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             testID="login-submit-button"
-            style={[
-              styles.loginButton,
-              { backgroundColor: colors.primary },
-              isLoading && styles.loginButtonDisabled,
-            ]}
+            style={[styles.loginButton, { backgroundColor: colors.primary }, isLoading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={isLoading}
           >
-            <Text style={styles.loginButtonText}>{isLoading ? 'Entrando...' : 'Entrar'}</Text>
+            <Text style={styles.loginButtonText}>{isLoading ? 'Entrando...' : 'Entrar agora'}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.forgotPasswordButton} onPress={handleForgotPassword}>
-            <Text style={[styles.forgotPasswordText, { color: colors.primary }]}>
-              Esqueceu sua senha?
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: colors.textSecondary }]}>Nao tem uma conta? </Text>
-          <TouchableOpacity testID="login-register-link" onPress={handleRegister}>
-            <Text style={[styles.registerText, { color: colors.primary }]}>Cadastre-se</Text>
+          <TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border }]} onPress={() => navigation.navigate('Register' as never)}>
+            <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Criar nova conta</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -139,67 +152,182 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 32,
+    paddingTop: 32,
+    paddingBottom: 28,
+    justifyContent: 'center',
   },
-  header: {
+  heroWrap: {
+    marginBottom: 20,
+  },
+  heroGlow: {
+    position: 'absolute',
+    top: -12,
+    right: 24,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+  },
+  heroGlowLight: {
+    backgroundColor: 'rgba(200,76,54,0.12)',
+  },
+  heroGlowDark: {
+    backgroundColor: 'rgba(255,122,89,0.16)',
+  },
+  heroCard: {
+    borderWidth: 1,
+    borderRadius: 28,
+    padding: 22,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 22,
+    elevation: 8,
+  },
+  brandRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 20,
+  },
+  brandBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  brandBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  brandName: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: '800',
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 18,
   },
-  form: {
-    marginBottom: 40,
+  metricsRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  inputContainer: {
-    borderRadius: 12,
-    marginBottom: 16,
-    paddingHorizontal: 16,
+  metricCard: {
+    flex: 1,
+    borderRadius: 18,
+    padding: 14,
   },
-  input: {
-    height: 50,
-    fontSize: 16,
+  metricNumber: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 4,
   },
-  loginButton: {
-    height: 50,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+  metricLabel: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  formCard: {
+    borderWidth: 1,
+    borderRadius: 28,
+    padding: 22,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 18,
+    elevation: 6,
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  formSubtitle: {
+    fontSize: 14,
+    lineHeight: 21,
+    marginBottom: 18,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 8,
     marginTop: 8,
   },
-  loginButtonDisabled: {
-    opacity: 0.6,
+  inputShell: {
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    minHeight: 58,
+    justifyContent: 'center',
+  },
+  passwordShell: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  input: {
+    fontSize: 16,
+    minHeight: 54,
+  },
+  passwordInput: {
+    flex: 1,
+  },
+  eyeButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eyeIcon: {
+    fontSize: 18,
+  },
+  forgotWrap: {
+    alignSelf: 'flex-end',
+    marginTop: 12,
+    marginBottom: 20,
+  },
+  forgotText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  loginButton: {
+    minHeight: 56,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loginButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
-  forgotPasswordButton: {
+  secondaryButton: {
+    minHeight: 54,
+    borderRadius: 18,
+    borderWidth: 1,
     alignItems: 'center',
-    marginTop: 16,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-  },
-  footer: {
-    flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
+    marginTop: 12,
   },
-  footerText: {
-    fontSize: 14,
+  secondaryButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
-  registerText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+  buttonDisabled: {
+    opacity: 0.65,
   },
 });
+
+
+

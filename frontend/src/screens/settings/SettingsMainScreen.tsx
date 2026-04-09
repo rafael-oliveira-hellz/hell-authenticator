@@ -1,4 +1,4 @@
-import { useAuth } from '@/contexts/AuthContext';
+﻿import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
@@ -16,78 +16,59 @@ export const SettingsMainScreen: React.FC = () => {
   const settingsItems = [
     {
       title: 'Segurança',
-      subtitle: 'Biometria, PIN, configurações de segurança',
-      icon: '🔒',
+      subtitle: 'Biometria, PIN e configurações de segurança',
+      icon: 'Seg',
       onPress: () => navigation.navigate('Security' as never),
     },
     {
       title: 'Notificações',
       subtitle: 'Configurar alertas e notificações',
-      icon: '🔔',
+      icon: 'Not',
       onPress: () => navigation.navigate('Notifications' as never),
     },
     {
       title: 'Backup',
-      subtitle: 'Configurar backup automático e cloud',
-      icon: '☁️',
+      subtitle: 'Configurar backup automático e nuvem',
+      icon: 'Bkp',
       onPress: () => navigation.navigate('Backup' as never),
     },
     {
       title: 'Sobre',
       subtitle: 'Informações do app e versão',
-      icon: 'ℹ️',
+      icon: 'Info',
       onPress: () => navigation.navigate('About' as never),
     },
   ];
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* User Info */}
-      <View style={[styles.userSection, { backgroundColor: colors.surface }]}>
+      <View style={[styles.userSection, { backgroundColor: colors.surface }]}> 
         <View style={styles.userInfo}>
-          <Text style={[styles.userName, { color: colors.text }]}>
-            {user?.name || 'Usuário'}
-          </Text>
-          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-            {user?.email || 'usuario@exemplo.com'}
-          </Text>
+          <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'Usuário'}</Text>
+          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{user?.email || 'usuario@exemplo.com'}</Text>
         </View>
       </View>
 
-      {/* Settings Items */}
-      <View style={[styles.settingsSection, { backgroundColor: colors.surface }]}>
+      <View style={[styles.settingsSection, { backgroundColor: colors.surface }]}> 
         {settingsItems.map((item, index) => (
           <TouchableOpacity
             key={index}
-            style={[
-              styles.settingItem,
-              { backgroundColor: colors.card }
-            ]}
+            style={[styles.settingItem, { backgroundColor: colors.card }]}
             onPress={item.onPress}
           >
             <Text style={styles.settingIcon}>{item.icon}</Text>
             <View style={styles.settingInfo}>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>
-                {item.title}
-              </Text>
-              <Text style={[styles.settingSubtitle, { color: colors.textSecondary }]}>
-                {item.subtitle}
-              </Text>
+              <Text style={[styles.settingTitle, { color: colors.text }]}>{item.title}</Text>
+              <Text style={[styles.settingSubtitle, { color: colors.textSecondary }]}>{item.subtitle}</Text>
             </View>
-            <Text style={[styles.settingArrow, { color: colors.textSecondary }]}>
-              ›
-            </Text>
+            <Text style={[styles.settingArrow, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Logout Button */}
-      <View style={[styles.logoutSection, { backgroundColor: colors.surface }]}>
-        <TouchableOpacity
-          style={[styles.logoutButton, { backgroundColor: colors.error }]}
-          onPress={handleLogout}
-        >
-          <Text style={styles.logoutButtonText}>Sair da Conta</Text>
+      <View style={[styles.logoutSection, { backgroundColor: colors.surface }]}> 
+        <TouchableOpacity style={[styles.logoutButton, { backgroundColor: colors.error }]} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Sair da conta</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -125,8 +106,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   settingIcon: {
-    fontSize: 24,
-    marginRight: 16,
+    fontSize: 14,
+    fontWeight: '700',
+    width: 36,
   },
   settingInfo: {
     flex: 1,
@@ -157,5 +139,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-
-

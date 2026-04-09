@@ -1,18 +1,11 @@
-import { useAuth } from '@/contexts/AuthContext';
+﻿import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { totpService } from '@/services/totp';
 import { useAccountsQuery, useAccountStatsQuery } from '@/hooks/useAccounts';
+import { totpService } from '@/services/totp';
 import { Account, TOTPCode } from '@/types';
 import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
@@ -22,37 +15,21 @@ export const HomeScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [totpCodes, setTotpCodes] = useState<Map<string, TOTPCode>>(new Map());
 
-  const {
-    data: accounts = [],
-    refetch: refetchAccounts,
-  } = useAccountsQuery();
+  const { data: accounts = [], refetch: refetchAccounts } = useAccountsQuery();
+  const { data: stats, refetch: refetchStats } = useAccountStatsQuery();
 
-  const {
-    data: stats,
-    refetch: refetchStats,
-  } = useAccountStatsQuery();
-
-  const activeAccounts = useMemo(() => {
-    return accounts.filter(account => account.isActive);
-  }, [accounts]);
-
-  const recentActiveAccounts = useMemo(() => {
-    return activeAccounts.slice(0, 5);
-  }, [activeAccounts]);
+  const activeAccounts = useMemo(() => accounts.filter((account) => account.isActive), [accounts]);
+  const recentActiveAccounts = useMemo(() => activeAccounts.slice(0, 4), [activeAccounts]);
 
   const updateTOTPCodes = useCallback(() => {
-    const newCodes = new Map<string, TOTPCode>();
-    accounts.forEach(account => {
-      newCodes.set(account.id, totpService.generateTOTP(account));
-    });
-    setTotpCodes(newCodes);
+    const nextCodes = new Map<string, TOTPCode>();
+    accounts.forEach((account) => nextCodes.set(account.id, totpService.generateTOTP(account)));
+    setTotpCodes(nextCodes);
   }, [accounts]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      updateTOTPCodes();
-    }, 1000);
-
+    updateTOTPCodes();
+    const interval = setInterval(updateTOTPCodes, 1000);
     return () => clearInterval(interval);
   }, [updateTOTPCodes]);
 
@@ -65,361 +42,280 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
-  const handleAccountPress = (account: Account) => {
-    navigation.navigate('Accounts', { screen: 'AccountDetail', params: { accountId: account.id } });
-  };
+  const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
 
-  const handleAddAccount = () => {
-    navigation.navigate('Accounts', { screen: 'AddAccount' });
-  };
-
-  const handleScanQR = () => {
-    navigation.navigate('Accounts', { screen: 'QRScanner' });
-  };
-
-  const formatTime = (seconds: number) => {
-    return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
-  };
+  const quickActions = [
+    {
+      label: 'Escanear QR',
+      hint: 'Importe um serviço em segundos',
+      accent: colors.primary,
+      onPress: () => navigation.navigate('Accounts', { screen: 'QRScanner' }),
+    },
+    {
+      label: 'Adicionar manualmente',
+      hint: 'Monte uma conta com fluxo guiado',
+      accent: colors.secondary,
+      onPress: () => navigation.navigate('Accounts', { screen: 'ManualEntry' }),
+    },
+    {
+      label: 'Criar backup',
+      hint: 'Proteja suas contas agora',
+      accent: '#D98E04',
+      onPress: () => navigation.navigate('Backup', { screen: 'CreateBackup' }),
+    },
+  ];
 
   return (
     <ScrollView
-      style={[
-        styles.container,
-        { backgroundColor: colors.background }
-      ]}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={isDark ? '#FFFFFF' : colors.primary}
-        />
-      }
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? '#FFFFFF' : colors.primary} />}
     >
-      <View style={[
-        styles.header,
-        { backgroundColor: colors.surface }
-      ]}>
-        <View style={styles.welcomeSection}>
-          <Text style={[
-            styles.welcomeText,
-            { color: colors.textSecondary }
-          ]}>
-            Bem-vindo de volta,
-          </Text>
-          <Text style={[
-            styles.userName,
-            { color: colors.text }
-          ]}>
-            {user?.name || 'Usuario'}
-          </Text>
-        </View>
+      <View style={[styles.heroCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+        <Text style={[styles.kicker, { color: colors.textSecondary }]}>Painel principal</Text>
+        <Text style={[styles.heroTitle, { color: colors.text }]}>Olá, {user?.name || 'usuário'}.</Text>
+        <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>Seus códigos ficam prontos aqui, com acesso rápido às ações que mais importam.</Text>
 
-        <View style={styles.statsSection}>
-          <View style={styles.statItem}>
-            <Text style={[
-              styles.statNumber,
-              { color: colors.text }
-            ]}>
-              {stats?.total ?? accounts.length}
-            </Text>
-            <Text style={[
-              styles.statLabel,
-              { color: colors.textSecondary }
-            ]}>
-              Contas
-            </Text>
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, { backgroundColor: colors.surface }]}> 
+            <Text style={[styles.statValue, { color: colors.text }]}>{stats?.total ?? accounts.length}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>contas no cofre</Text>
           </View>
-
-          <View style={styles.statItem}>
-            <Text style={[
-              styles.statNumber,
-              { color: colors.text }
-            ]}>
-              {stats?.active ?? activeAccounts.length}
-            </Text>
-            <Text style={[
-              styles.statLabel,
-              { color: colors.textSecondary }
-            ]}>
-              Ativas
-            </Text>
+          <View style={[styles.statCard, { backgroundColor: colors.surface }]}> 
+            <Text style={[styles.statValue, { color: colors.text }]}>{stats?.active ?? activeAccounts.length}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>ativas agora</Text>
           </View>
         </View>
       </View>
 
-      <View style={[
-        styles.section,
-        { backgroundColor: colors.surface }
-      ]}>
-        <Text style={[
-          styles.sectionTitle,
-          { color: colors.text }
-        ]}>
-          Acoes Rapidas
-        </Text>
-
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              { backgroundColor: colors.card }
-            ]}
-            onPress={handleAddAccount}
-          >
-            <Text style={styles.actionIcon}>+</Text>
-            <Text style={[
-              styles.actionText,
-              { color: colors.text }
-            ]}>
-              Adicionar Conta
-            </Text>
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Acesso rápido</Text>
+      </View>
+      <View style={styles.actionsColumn}>
+        {quickActions.map((action) => (
+          <TouchableOpacity key={action.label} style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={action.onPress}>
+            <View style={[styles.actionAccent, { backgroundColor: action.accent }]} />
+            <View style={styles.actionTextWrap}>
+              <Text style={[styles.actionLabel, { color: colors.text }]}>{action.label}</Text>
+              <Text style={[styles.actionHint, { color: colors.textSecondary }]}>{action.hint}</Text>
+            </View>
+            <Text style={[styles.chevron, { color: colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              { backgroundColor: colors.card }
-            ]}
-            onPress={handleScanQR}
-          >
-            <Text style={styles.actionIcon}>QR</Text>
-            <Text style={[
-              styles.actionText,
-              { color: colors.text }
-            ]}>
-              Scanner QR
-            </Text>
-          </TouchableOpacity>
-        </View>
+        ))}
       </View>
 
-      <View style={[
-        styles.section,
-        { backgroundColor: colors.surface }
-      ]}>
-        <View style={styles.sectionHeader}>
-          <Text style={[
-            styles.sectionTitle,
-            { color: colors.text }
-          ]}>
-            Contas Recentes
-          </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Accounts', { screen: 'AccountList' })}>
-            <Text style={[
-              styles.seeAllText,
-              { color: colors.primary }
-            ]}>
-              Ver todas
-            </Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Códigos recentes</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Accounts', { screen: 'AccountList' })}>
+          <Text style={[styles.sectionLink, { color: colors.primary }]}>Ver tudo</Text>
+        </TouchableOpacity>
+      </View>
 
-        {recentActiveAccounts.length > 0 ? (
-          recentActiveAccounts.map(account => {
-            const totpCode = totpCodes.get(account.id);
-            return (
-              <TouchableOpacity
-                key={account.id}
-                style={[
-                  styles.accountCard,
-                  { backgroundColor: colors.card }
-                ]}
-                onPress={() => handleAccountPress(account)}
-              >
-                <View style={styles.accountInfo}>
-                  <Text style={[
-                    styles.accountName,
-                    { color: colors.text }
-                  ]}>
-                    {account.name}
-                  </Text>
-                  {account.issuer && (
-                    <Text style={[
-                      styles.accountIssuer,
-                      { color: colors.textSecondary }
-                    ]}>
-                      {account.issuer}
-                    </Text>
-                  )}
-                </View>
+      {recentActiveAccounts.length > 0 ? (
+        recentActiveAccounts.map((account: Account) => {
+          const code = totpCodes.get(account.id);
+          const isUrgent = Boolean(code && code.remainingTime <= 5);
 
-                <View style={styles.totpSection}>
-                  <Text style={[
-                    styles.totpCode,
-                    { color: colors.text }
-                  ]}>
-                    {totpCode?.code || '------'}
-                  </Text>
-                  <Text style={[
-                    styles.totpTimer,
-                    { color: totpCode && totpCode.remainingTime <= 5 ? colors.error : colors.textSecondary }
-                  ]}>
-                    {totpCode ? formatTime(totpCode.remainingTime) : '--:--'}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={[
-              styles.emptyIcon,
-              { color: colors.textSecondary }
-            ]}>
-              *
-            </Text>
-            <Text style={[
-              styles.emptyText,
-              { color: colors.textSecondary }
-            ]}>
-              Nenhuma conta adicionada ainda
-            </Text>
+          return (
             <TouchableOpacity
-              style={[
-                styles.addFirstButton,
-                { backgroundColor: colors.primary }
-              ]}
-              onPress={handleAddAccount}
+              key={account.id}
+              style={[styles.accountCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => navigation.navigate('Accounts', { screen: 'AccountDetail', params: { accountId: account.id } })}
             >
-              <Text style={styles.addFirstButtonText}>
-                Adicionar primeira conta
-              </Text>
+              <View style={styles.accountLeft}>
+                <View style={[styles.accountMonogram, { backgroundColor: colors.surface }]}>
+                  <Text style={[styles.accountMonogramText, { color: colors.primary }]}>{account.name.slice(0, 1).toUpperCase()}</Text>
+                </View>
+                <View>
+                  <Text style={[styles.accountName, { color: colors.text }]}>{account.name}</Text>
+                  <Text style={[styles.accountIssuer, { color: colors.textSecondary }]}>{account.issuer || 'Conta sem emissor'}</Text>
+                </View>
+              </View>
+
+              <View style={styles.codeWrap}>
+                <Text style={[styles.codeValue, { color: colors.text }]}>{code?.code || '------'}</Text>
+                <Text style={[styles.codeTimer, { color: isUrgent ? colors.error : colors.textSecondary }]}>{code ? formatTime(code.remainingTime) : '--:--'}</Text>
+              </View>
             </TouchableOpacity>
-          </View>
-        )}
-      </View>
+          );
+        })
+      ) : (
+        <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Seu cofre ainda está vazio</Text>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Comece adicionando a primeira conta por QR Code ou manualmente.</Text>
+          <TouchableOpacity style={[styles.emptyButton, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate('Accounts', { screen: 'QRScanner' })}>
+            <Text style={styles.emptyButtonText}>Adicionar primeira conta</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  content: { padding: 18, paddingBottom: 36 },
+  heroCard: {
+    borderWidth: 1,
+    borderRadius: 28,
+    padding: 22,
+    marginBottom: 22,
   },
-  header: {
-    padding: 20,
-    marginBottom: 10,
+  kicker: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
   },
-  welcomeSection: {
-    marginBottom: 20,
+  heroTitle: {
+    fontSize: 30,
+    fontWeight: '800',
+    marginBottom: 8,
   },
-  welcomeText: {
-    fontSize: 16,
+  heroSubtitle: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 18,
   },
-  userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  statsSection: {
+  statsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    gap: 12,
   },
-  statItem: {
-    alignItems: 'center',
+  statCard: {
+    flex: 1,
+    borderRadius: 20,
+    padding: 16,
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  statValue: {
+    fontSize: 26,
+    fontWeight: '800',
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  section: {
-    marginBottom: 10,
-    padding: 20,
+    fontSize: 13,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
+    marginTop: 4,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '800',
   },
-  seeAllText: {
-    fontSize: 16,
-    fontWeight: '500',
+  sectionLink: {
+    fontSize: 14,
+    fontWeight: '700',
   },
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  actionsColumn: {
+    gap: 12,
+    marginBottom: 24,
   },
-  actionButton: {
-    flex: 1,
-    marginHorizontal: 8,
+  actionCard: {
+    borderWidth: 1,
+    borderRadius: 22,
     padding: 16,
-    borderRadius: 12,
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  actionIcon: {
-    fontSize: 24,
-    marginBottom: 8,
+  actionAccent: {
+    width: 12,
+    height: 42,
+    borderRadius: 8,
+    marginRight: 14,
   },
-  actionText: {
-    fontSize: 14,
-    fontWeight: '500',
+  actionTextWrap: {
+    flex: 1,
+  },
+  actionLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  actionHint: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  chevron: {
+    fontSize: 28,
+    marginLeft: 12,
   },
   accountCard: {
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
   },
-  accountInfo: {
+  accountLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
+  },
+  accountMonogram: {
+    width: 50,
+    height: 50,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  accountMonogramText: {
+    fontSize: 20,
+    fontWeight: '800',
   },
   accountName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: 4,
   },
   accountIssuer: {
-    fontSize: 14,
+    fontSize: 13,
   },
-  totpSection: {
+  codeWrap: {
     alignItems: 'flex-end',
+    marginLeft: 12,
   },
-  totpCode: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    fontFamily: 'monospace',
-    marginBottom: 4,
+  codeValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: 1.4,
   },
-  totpTimer: {
+  codeTimer: {
     fontSize: 12,
-    fontWeight: '500',
+    marginTop: 4,
+    fontWeight: '700',
   },
-  emptyState: {
+  emptyCard: {
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 22,
     alignItems: 'center',
-    paddingVertical: 40,
   },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 16,
-    marginBottom: 20,
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 8,
     textAlign: 'center',
   },
-  addFirstButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
+  emptyText: {
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 18,
   },
-  addFirstButtonText: {
+  emptyButton: {
+    borderRadius: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  emptyButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '800',
   },
 });
-
-
-
-
-

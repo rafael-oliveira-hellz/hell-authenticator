@@ -1,40 +1,39 @@
-import { useTheme } from '@/contexts/ThemeContext';
+﻿import { useTheme } from '@/contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export const ForgotPasswordScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useTheme();
-  
+
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleResetPassword = async () => {
     if (!email) {
-      Alert.alert('Erro', 'Por favor, insira seu email');
+      Alert.alert('Erro', 'Por favor, insira seu e-mail');
       return;
     }
 
     setIsLoading(true);
     try {
-      // TODO: Implementar reset de senha
       Alert.alert(
         'Email enviado',
-        'Se o email existir em nossa base, você receberá instruções para redefinir sua senha.'
+        'Se o e-mail existir em nossa base, você receberá instruções para redefinir sua senha.'
       );
       navigation.navigate('Login' as never);
-    } catch (error) {
-      Alert.alert('Erro', 'Falha ao enviar email de reset');
+    } catch {
+      Alert.alert('Erro', 'Falha ao enviar e-mail de redefinição');
     } finally {
       setIsLoading(false);
     }
@@ -46,39 +45,20 @@ export const ForgotPasswordScreen: React.FC = () => {
 
   return (
     <KeyboardAvoidingView
-      style={[
-        styles.container,
-        { backgroundColor: colors.background }
-      ]}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={[
-            styles.title,
-            { color: colors.text }
-          ]}>
-            Esqueceu sua senha?
-          </Text>
-          <Text style={[
-            styles.subtitle,
-            { color: colors.textSecondary }
-          ]}>
-            Digite seu email para receber instruções de redefinição
-          </Text>
+          <Text style={[styles.title, { color: colors.text }]}>Esqueceu sua senha?</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Digite seu e-mail para receber instruções de redefinição.</Text>
         </View>
 
         <View style={styles.form}>
-          <View style={[
-            styles.inputContainer,
-            { backgroundColor: colors.surface }
-          ]}>
+          <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}> 
             <TextInput
-              style={[
-                styles.input,
-                { color: colors.text }
-              ]}
-              placeholder="Email"
+              style={[styles.input, { color: colors.text }]}
+              placeholder="E-mail"
               placeholderTextColor={colors.textSecondary}
               value={email}
               onChangeText={setEmail}
@@ -89,30 +69,16 @@ export const ForgotPasswordScreen: React.FC = () => {
           </View>
 
           <TouchableOpacity
-            style={[
-              styles.resetButton,
-              { backgroundColor: colors.primary },
-              isLoading && styles.resetButtonDisabled
-            ]}
+            style={[styles.resetButton, { backgroundColor: colors.primary }, isLoading && styles.resetButtonDisabled]}
             onPress={handleResetPassword}
             disabled={isLoading}
           >
-            <Text style={styles.resetButtonText}>
-              {isLoading ? 'Enviando...' : 'Enviar Email'}
-            </Text>
+            <Text style={styles.resetButtonText}>{isLoading ? 'Enviando...' : 'Enviar e-mail'}</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBackToLogin}
-        >
-          <Text style={[
-            styles.backButtonText,
-            { color: colors.primary }
-          ]}>
-            Voltar para o login
-          </Text>
+        <TouchableOpacity style={styles.backButton} onPress={handleBackToLogin}>
+          <Text style={[styles.backButtonText, { color: colors.primary }]}>Voltar para o login</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -176,5 +142,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-
-
