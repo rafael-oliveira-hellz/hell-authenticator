@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  passwordHash     String
+  mfaEnabled       Boolean  @default(false)
+  mfaSecretEnc     String?  // AES-256-GCM
+  mfaAlgorithm     String?  // 'sha1' | 'sha256' | 'sha512'
+  mfaDigits        Int?     // 6 | 8
+  mfaPeriod        Int?     // 15-60
+  mfaLastCounter   Int?
+  mfaRecoveryHash  String[] @default([])
+  mfaStatus        String?  // 'NONE' | 'PENDING' | 'ENABLED'
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model MfaChallenge {
+  id        String   @id @default(uuid())
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+

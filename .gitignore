@@ -1,0 +1,27 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+build/
+coverage/
+.gradle/
+.android-user-home/
+.gradle-user-home/
+frontend/.gradle-user-home/
+frontend/.android-user-home/
+frontend/android/.gradle/
+frontend/android/app/build/
+frontend/android/build/
+
+# IDE/OS
+.vscode/
+.idea/
+.cursor/
+.DS_Store
+Thumbs.db

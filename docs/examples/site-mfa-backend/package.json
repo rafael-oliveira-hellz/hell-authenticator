@@ -1,0 +1,43 @@
+{
+  "name": "site-mfa-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node --enable-source-maps --no-warnings=ExperimentalWarning ./dist/server.js",
+    "build": "tsc -p .",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:deploy": "prisma migrate deploy",
+    "lint": "eslint . --ext .ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "@fastify/helmet": "^12.3.0",
+    "@fastify/sensible": "^5.6.0",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.26.2",
+    "fastify-plugin": "^4.5.1",
+    "jsonwebtoken": "^9.0.2",
+    "otplib": "^12.0.1",
+    "zod": "^3.23.8",
+    "@prisma/client": "^5.18.0"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.11.30",
+    "eslint": "^8.57.0",
+    "typescript": "^5.6.2",
+    "tsx": "^4.19.2",
+    "prisma": "^5.18.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
+
+
