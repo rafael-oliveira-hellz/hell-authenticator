@@ -18,6 +18,11 @@ frontend/.android-user-home/
 frontend/android/.gradle/
 frontend/android/app/build/
 frontend/android/build/
+frontend/artifacts/
+frontend/.metro-live.log
+frontend/.metro-live.err.log
+frontend/android/build-release.log
+frontend/android/gradle-install.log
 
 # IDE/OS
 .vscode/
