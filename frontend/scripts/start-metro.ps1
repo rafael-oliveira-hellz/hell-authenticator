@@ -23,8 +23,8 @@ if ($listeners) {
   }
 }
 
-Write-Host 'Iniciando Metro em http://0.0.0.0:8081 ...'
-& npx.cmd react-native start --host 0.0.0.0 --port 8081
+Write-Host 'Iniciando Metro em http://127.0.0.1:8081 ...'
+& npx.cmd react-native start --host 127.0.0.1 --port 8081
 $exitCode = $LASTEXITCODE
 
 if ($exitCode -ne 0) {

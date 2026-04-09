@@ -1,54 +1,53 @@
-# Hell Authenticator 🔥
+# Hell Authenticator
 
-Um aplicativo autenticador multiplataforma (iOS e Android) inspirado no Microsoft Authenticator e Google Authenticator, com recursos avançados de segurança e interface moderna.
+Um aplicativo autenticador multiplataforma (iOS e Android) inspirado no Microsoft Authenticator e Google Authenticator, com recursos avancados de seguranca e interface moderna.
 
-## 📋 Visão Geral
+## Visao Geral
 
-O Hell Authenticator é uma solução completa de autenticação de dois fatores (2FA) que permite aos usuários gerenciar códigos TOTP (Time-based One-Time Password) de forma segura e intuitiva. O aplicativo suporta escaneamento de QR codes de outros autenticadores populares e oferece recursos avançados de backup e sincronização.
+O Hell Authenticator e uma solucao completa de autenticacao de dois fatores (2FA) que permite aos usuarios gerenciar codigos TOTP (Time-based One-Time Password) de forma segura e intuitiva. O aplicativo suporta escaneamento de QR codes de outros autenticadores populares e oferece recursos avancados de backup e sincronizacao.
 
-## 🚀 Funcionalidades Principais
+## Funcionalidades Principais
 
-- ✅ Escaneamento de QR codes (Microsoft Authenticator, Google Authenticator)
-- ✅ Geração de códigos TOTP em tempo real
-- ✅ Backup e restauração de contas
-- ✅ Interface moderna e responsiva
-- ✅ Suporte a múltiplas contas
-- ✅ Modo escuro/claro
-- ✅ Biometria (Face ID, Touch ID, Fingerprint)
-- ✅ Sincronização entre dispositivos
-- ✅ Exportação/Importação de contas
+- Escaneamento de QR codes (Microsoft Authenticator, Google Authenticator)
+- Geracao de codigos TOTP em tempo real
+- Backup e restauracao de contas
+- Interface moderna e responsiva
+- Suporte a multiplas contas
+- Modo escuro/claro
+- Biometria (Face ID, Touch ID, Fingerprint)
+- Sincronizacao entre dispositivos
+- Exportacao/Importacao de contas
 
-## 📱 Plataformas Suportadas
+## Plataformas Suportadas
 
-- **iOS** (iPhone e iPad)
-- **Android** (Smartphones e Tablets)
+- iOS (iPhone e iPad)
+- Android (Smartphones e Tablets)
 
-## 🏗️ Arquitetura
+## Arquitetura
 
-- **Frontend**: React Native com TypeScript
-- **Backend**: Node.js com Express e TypeScript
-- **Banco de Dados**: PostgreSQL
-- **Autenticação**: JWT + Biometria
-- **Criptografia**: AES-256 para dados sensíveis
+- Frontend: React Native com TypeScript
+- Backend: Node.js com Fastify e TypeScript
+- Banco de Dados: PostgreSQL
+- Autenticacao: JWT + Biometria
+- Criptografia: AES-256 para dados sensiveis
 
-## 📚 Documentação
+## Documentacao
 
-- [📖 Documentação de Negócio](./docs/business/README.md)
-- [🔧 Documentação Técnica](./docs/technical/README.md)
-- [📱 Guia de Desenvolvimento](./docs/development/README.md)
-- [🔒 Guia de Segurança](./docs/security/README.md)
+- [Documentacao de Negocio](./docs/business/README.md)
+- [Documentacao Tecnica](./docs/technical/README.md)
+- [Guia de Desenvolvimento](./docs/development/README.md)
+- [Guia de Seguranca](./docs/security/README.md)
 
-## 🛠️ Tecnologias
+## Tecnologias
 
 ### Frontend
-- React Native 0.72+
+
+- React Native 0.81+
 - TypeScript 5.0+
 - React Navigation 6
-- React Native Elements
-- React Native Crypto
-- React Native QR Scanner
 
 ### Backend
+
 - Node.js 18+
 - Fastify 4.x+
 - TypeScript 5.0+
@@ -58,46 +57,40 @@ O Hell Authenticator é uma solução completa de autenticação de dois fatores
 - crypto
 
 ### DevOps
+
 - Docker
 - GitHub Actions
 - Snyk Security
 - Jest
 - Detox (E2E Testing)
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
-# Clone o repositório
+# Clone o repositorio
 git clone https://github.com/seu-usuario/hell-authenticator.git
 cd hell-authenticator
 
-# Instalar dependências
+# Backend
+cd backend
 npm install
 
-# Configurar variáveis de ambiente
-cp .env.example .env
-
-# Executar backend
-npm run dev:backend
-
-# Executar aplicativo
-npm run dev:mobile
+# Frontend
+cd ../frontend
+npm install
 ```
 
-## 📄 Licença
+## Licenca
 
-Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+Este projeto esta licenciado sob a Licenca MIT.
 
-## 🤝 Contribuição
+## Contribuicao
 
-Contribuições são bem-vindas! Por favor, leia o [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes sobre nosso código de conduta e o processo para enviar pull requests.
+Contribuicoes sao bem-vindas. Consulte a documentacao do projeto para alinhar padroes e fluxo de desenvolvimento.
 
-## 📞 Suporte
+## Suporte
 
-Para suporte e dúvidas, entre em contato através de:
+Para suporte e duvidas:
+
 - Email: suporte@hellauthenticator.com
 - Issues: [GitHub Issues](https://github.com/seu-usuario/hell-authenticator/issues)
-
----
-
-**Hell Authenticator** - Segurança com estilo 🔥
