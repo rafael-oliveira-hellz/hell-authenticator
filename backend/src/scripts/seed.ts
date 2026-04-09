@@ -79,7 +79,7 @@ const DEFAULT_USER_PREFERENCES: User['preferences'] = {
   backup: {
     autoBackup: true,
     backupFrequency: 7,
-    cloudProvider: 'aws',
+    cloudProvider: 'gcp',
     encryptionEnabled: true,
     retentionDays: 30
   }

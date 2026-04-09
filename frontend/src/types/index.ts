@@ -10,9 +10,11 @@ export type Theme = 'light' | 'dark' | 'auto';
 export type Language = 'pt-BR' | 'en-US' | 'es-ES';
 export type BiometricType = 'fingerprint' | 'face' | 'touch';
 export type DeviceType = 'mobile' | 'tablet' | 'desktop';
-export type CloudProvider = 'aws' | 'gcp' | 'azure' | 'dropbox' | 'onedrive';
+export type CloudProvider = 'gcp';
+export type UserCloudProvider = 'google-drive';
 export type BackupType = 'local' | 'cloud' | 'manual';
 export type AccountStatus = 'active' | 'inactive' | 'archived';
+export type UserCloudConnectionStatus = 'connected' | 'error' | 'disconnected';
 
 // ========================================
 // INTERFACES DE AUTENTICAÇÃO
@@ -92,7 +94,7 @@ export interface Account {
   id: string;
   name: string;
   issuer?: string;
-  secret: string; // Decrypted
+  secret: string;
   algorithm: TOTPAlgorithm;
   digits: TOTPDigits;
   period: TOTPPeriod;
@@ -116,7 +118,7 @@ export interface AccountMetadata {
 export interface CreateAccountData {
   name: string;
   issuer?: string;
-  secret: string;
+  secret?: string;
   algorithm?: TOTPAlgorithm;
   digits?: TOTPDigits;
   period?: TOTPPeriod;
@@ -158,6 +160,57 @@ export interface Backup {
   version: string;
   createdAt: string;
   expiresAt: string;
+}
+
+export interface CloudProviderInfo {
+  id: CloudProvider;
+  label: string;
+  description: string;
+  authMode: 'access-key' | 'bearer-token' | 'sas-token';
+  connectionStatus: 'connected' | 'not-configured';
+  verificationStatus: 'verified' | 'failed' | 'skipped';
+  verificationMessage?: string;
+  lastVerifiedAt?: string;
+  supportsAutomaticSetup: boolean;
+  supportsCustomPath: boolean;
+  requiredEnvVars: string[];
+  setupInstructions: string[];
+}
+
+export interface UserCloudConnection {
+  id: string;
+  provider: UserCloudProvider;
+  status: UserCloudConnectionStatus;
+  accountEmail?: string;
+  externalAccountId?: string;
+  expiresAt?: string;
+  lastVerifiedAt?: string;
+  scopes: string[];
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConnectUserCloudProviderData {
+  provider: UserCloudProvider;
+  accessToken: string;
+  refreshToken?: string;
+  accountEmail?: string;
+  externalAccountId?: string;
+  expiresAt?: string;
+  scopes?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface StartUserCloudOAuthData {
+  provider: UserCloudProvider;
+  successRedirectUri?: string;
+  errorRedirectUri?: string;
+}
+
+export interface StartUserCloudOAuthResult {
+  provider: UserCloudProvider;
+  authorizationUrl: string;
 }
 
 export interface CreateBackupData {
@@ -211,7 +264,14 @@ export type BackupStackParamList = {
   BackupDetail: { backupId: string };
   CreateBackup: undefined;
   RestoreBackup: { backupId: string };
-  CloudSettings: undefined;
+  CloudSettings:
+    | {
+        oauthStatus?: 'connected' | 'error';
+        provider?: UserCloudProvider;
+        message?: string;
+        accountEmail?: string;
+      }
+    | undefined;
 };
 
 export type SettingsStackParamList = {

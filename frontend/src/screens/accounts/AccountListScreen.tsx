@@ -1,22 +1,19 @@
-import { useTheme } from '@/contexts/ThemeContext';
+﻿import { useTheme } from '@/contexts/ThemeContext';
 import { useAccountsQuery } from '@/hooks/useAccounts';
 import { Account, AccountStackParamList } from '@/types';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import React, { useMemo, useState } from 'react';
-import {
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type AccountListNavigationProp = StackNavigationProp<AccountStackParamList, 'AccountList'>;
 
-const ListSeparator = () => <View style={styles.separator} />;
+type QuickAction = {
+  key: 'scan' | 'manual';
+  label: string;
+  description: string;
+  onPress: () => void;
+};
 
 export const AccountListScreen: React.FC = () => {
   const navigation = useNavigation<AccountListNavigationProp>();
@@ -24,12 +21,24 @@ export const AccountListScreen: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
 
-  const {
-    data: accounts = [],
-    isLoading,
-    refetch,
-  } = useAccountsQuery();
+  const { data: accounts = [], isLoading, refetch } = useAccountsQuery();
+
+  const quickActions = useMemo<QuickAction[]>(() => [
+    {
+      key: 'scan',
+      label: 'Escanear QR Code',
+      description: 'Importe uma conta em segundos lendo o QR do serviço.',
+      onPress: () => navigation.navigate('QRScanner'),
+    },
+    {
+      key: 'manual',
+      label: 'Adicionar manualmente',
+      description: 'Crie uma conta com fluxo guiado e secret automático.',
+      onPress: () => navigation.navigate('ManualEntry'),
+    },
+  ], [navigation]);
 
   const filteredAccounts = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
@@ -53,56 +62,58 @@ export const AccountListScreen: React.FC = () => {
     }
   };
 
-  const handleAccountPress = (account: Account) => {
-    navigation.navigate('AccountDetail', { accountId: account.id });
-  };
-
-  const handleAddAccount = () => {
-    navigation.navigate('AddAccount');
-  };
-
   const renderAccountItem = ({ item }: { item: Account }) => (
     <TouchableOpacity
-      style={[styles.accountItem, { backgroundColor: colors.card }]}
-      onPress={() => handleAccountPress(item)}
+      style={[styles.accountItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+      onPress={() => navigation.navigate('AccountDetail', { accountId: item.id })}
     >
+      <View style={[styles.monogram, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.monogramText, { color: colors.primary }]}>{item.name.slice(0, 1).toUpperCase()}</Text>
+      </View>
+
       <View style={styles.accountInfo}>
         <Text style={[styles.accountName, { color: colors.text }]}>{item.name}</Text>
-        {item.issuer && <Text style={[styles.accountIssuer, { color: colors.textSecondary }]}>{item.issuer}</Text>}
-        <Text style={[styles.accountUsage, { color: colors.textSecondary }]}>Usado {item.usageCount} vezes</Text>
+        <Text style={[styles.accountIssuer, { color: colors.textSecondary }]}>{item.issuer || 'Sem emissor definido'}</Text>
+        <Text style={[styles.accountUsage, { color: colors.textSecondary }]}>Uso total: {item.usageCount}</Text>
       </View>
 
       <View style={styles.accountStatus}>
-        <View style={[styles.statusIndicator, item.isActive ? styles.statusActive : styles.statusInactive]} />
+        <View style={[styles.statusDot, { backgroundColor: item.isActive ? colors.success : colors.error }]} />
+        <Text style={[styles.statusText, { color: colors.textSecondary }]}>{item.isActive ? 'Ativa' : 'Inativa'}</Text>
       </View>
     </TouchableOpacity>
   );
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <Text style={[styles.emptyIcon, { color: colors.textSecondary }]}>??</Text>
-      <Text style={[styles.emptyTitle, { color: colors.text }]}>Nenhuma conta encontrada</Text>
+  const emptyState = (
+    <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>Nenhuma conta por aqui</Text>
       <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-        {searchQuery ? 'Tente ajustar sua busca' : 'Adicione sua primeira conta para come�ar'}
+        {searchQuery
+          ? 'Ajuste sua busca para encontrar a conta desejada.'
+          : 'Comece importando por QR Code ou adicionando manualmente.'}
       </Text>
-      {!searchQuery && (
-        <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={handleAddAccount}>
-          <Text style={styles.addButtonText}>Adicionar Conta</Text>
+      {!searchQuery ? (
+        <TouchableOpacity style={[styles.emptyButton, { backgroundColor: colors.primary }]} onPress={() => setIsFabMenuOpen(true)}>
+          <Text style={styles.emptyButtonText}>Escolher como adicionar</Text>
         </TouchableOpacity>
-      )}
+      ) : null}
     </View>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.searchContainer, { backgroundColor: colors.surface }]}>
-        <TextInput
-          style={[styles.searchInput, { color: colors.text, backgroundColor: colors.surface }]}
-          placeholder="Buscar contas..."
-          placeholderTextColor={colors.textSecondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+    <View style={[styles.container, { backgroundColor: colors.background }]}> 
+      <View style={[styles.heroCard, { backgroundColor: colors.card, borderColor: colors.border }]}> 
+        <Text style={[styles.heroTitle, { color: colors.text }]}>Suas contas</Text>
+        <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>Busque, abra detalhes e adicione novas entradas a partir deste hub.</Text>
+        <View style={[styles.searchShell, { backgroundColor: colors.surface, borderColor: colors.border }]}> 
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder="Buscar por nome ou emissor"
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
       </View>
 
       <FlatList
@@ -110,19 +121,28 @@ export const AccountListScreen: React.FC = () => {
         renderItem={renderAccountItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing || isLoading}
-            onRefresh={onRefresh}
-            tintColor={isDark ? '#FFFFFF' : colors.primary}
-          />
-        }
-        ListEmptyComponent={renderEmptyState}
-        ItemSeparatorComponent={ListSeparator}
+        refreshControl={<RefreshControl refreshing={refreshing || isLoading} onRefresh={onRefresh} tintColor={isDark ? '#FFFFFF' : colors.primary} />}
+        ListEmptyComponent={emptyState}
       />
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={handleAddAccount}>
-        <Text style={styles.fabText}>+</Text>
+      {isFabMenuOpen ? (
+        <Pressable style={styles.backdrop} onPress={() => setIsFabMenuOpen(false)}>
+          <View style={styles.fabMenuContainer}>
+            {quickActions.map((action) => (
+              <Pressable key={action.key} style={[styles.fabMenuItem, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => {
+                setIsFabMenuOpen(false);
+                action.onPress();
+              }}>
+                <Text style={[styles.fabMenuTitle, { color: colors.text }]}>{action.label}</Text>
+                <Text style={[styles.fabMenuDescription, { color: colors.textSecondary }]}>{action.description}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      ) : null}
+
+      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setIsFabMenuOpen((value) => !value)}>
+        <Text style={styles.fabText}>{isFabMenuOpen ? '×' : '+'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -130,105 +150,157 @@ export const AccountListScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  searchContainer: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#D9D9D9',
+  heroCard: {
+    margin: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderRadius: 28,
+    padding: 18,
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+  searchShell: {
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingHorizontal: 14,
   },
   searchInput: {
-    height: 40,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
+    minHeight: 50,
+    fontSize: 15,
   },
   listContainer: {
     flexGrow: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 110,
   },
   accountItem: {
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
+  },
+  monogram: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  monogramText: {
+    fontSize: 20,
+    fontWeight: '800',
   },
   accountInfo: { flex: 1 },
   accountName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: 4,
   },
   accountIssuer: {
-    fontSize: 14,
+    fontSize: 13,
     marginBottom: 4,
   },
-  accountUsage: { fontSize: 12 },
-  accountStatus: { marginLeft: 12 },
-  statusIndicator: {
+  accountUsage: {
+    fontSize: 12,
+  },
+  accountStatus: {
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  statusDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
+    marginBottom: 6,
   },
-  statusActive: { backgroundColor: '#34C759' },
-  statusInactive: { backgroundColor: '#D90429' },
-  separator: {
-    height: 1,
-    backgroundColor: '#D9D9D9',
-    marginVertical: 8,
+  statusText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
+    marginTop: 12,
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 22,
     alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '800',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 22,
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 24,
+    marginBottom: 18,
   },
-  addButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+  emptyButton: {
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
   },
-  addButtonText: {
+  emptyButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 18, 23, 0.28)',
+  },
+  fabMenuContainer: {
+    position: 'absolute',
+    right: 20,
+    bottom: 92,
+    width: 272,
+    gap: 12,
+  },
+  fabMenuItem: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 16,
+  },
+  fabMenuTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  fabMenuDescription: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   fab: {
     position: 'absolute',
-    bottom: 20,
     right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    bottom: 24,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
   },
   fabText: {
     color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '800',
+    marginTop: -1,
   },
 });

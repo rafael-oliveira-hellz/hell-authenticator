@@ -32,12 +32,40 @@ const accountServiceMock = {
   restoreFromBackup: jest.fn()
 };
 
+const cloudRegistryMock = {
+  list: jest.fn(),
+  get: jest.fn()
+};
+
+const cloudProviderMock = {
+  buildDefaultPath: jest.fn(),
+  upload: jest.fn(),
+  download: jest.fn(),
+  delete: jest.fn(),
+  descriptor: {
+    id: 'gcp',
+    label: 'Nuvem do app',
+    description: 'local dev',
+    authMode: 'bearer-token',
+    connectionStatus: 'connected',
+    verificationStatus: 'verified',
+    supportsAutomaticSetup: true,
+    supportsCustomPath: true,
+    requiredEnvVars: [],
+    setupInstructions: []
+  }
+};
+
 jest.mock('../EncryptionService', () => ({
   EncryptionService: jest.fn().mockImplementation(() => encryptionMock)
 }));
 
 jest.mock('../AccountService', () => ({
   AccountService: jest.fn().mockImplementation(() => accountServiceMock)
+}));
+
+jest.mock('../cloud/CloudBackupProviderRegistry', () => ({
+  CloudBackupProviderRegistry: jest.fn().mockImplementation(() => cloudRegistryMock)
 }));
 
 import { compare } from 'bcrypt';
@@ -62,6 +90,12 @@ describe('BackupService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    cloudRegistryMock.list.mockResolvedValue([cloudProviderMock.descriptor]);
+    cloudRegistryMock.get.mockReturnValue(cloudProviderMock);
+    cloudProviderMock.buildDefaultPath.mockReturnValue('user-1/2026-01-01/backup-1.enc');
+    cloudProviderMock.upload.mockResolvedValue(undefined);
+    cloudProviderMock.download.mockResolvedValue('encrypted-cloud-payload');
+    cloudProviderMock.delete.mockResolvedValue(undefined);
 
     (AppDataSource.getRepository as jest.Mock)
       .mockReturnValueOnce(backupRepository)
@@ -93,6 +127,15 @@ describe('BackupService', () => {
       where: { userId: 'user-1', isActive: true },
       order: { createdAt: 'DESC' }
     });
+  });
+
+  it('lists available cloud providers', async () => {
+    const service = new BackupService();
+
+    const result = await service.listCloudProviders();
+
+    expect(result).toEqual([cloudProviderMock.descriptor]);
+    expect(cloudRegistryMock.list).toHaveBeenCalledTimes(1);
   });
 
   it('returns backup by id', async () => {
@@ -149,17 +192,17 @@ describe('BackupService', () => {
     userRepository.findOne.mockResolvedValue({ id: 'user-1', isActive: true });
 
     await expect(
-      service.createBackup('user-1', { description: 'x', type: 'cloud', cloudProvider: 's3' as 'aws', cloudPath: '/p' })
+      service.createBackup('user-1', { description: 'x', type: 'cloud', cloudProvider: 'aws' as never, cloudPath: '/p' })
     ).rejects.toThrow('Invalid cloud provider');
   });
 
-  it('rejects createBackup cloud type without cloudPath', async () => {
+  it('rejects createBackup cloud type with empty cloudPath when provided', async () => {
     const service = new BackupService();
     userRepository.findOne.mockResolvedValue({ id: 'user-1', isActive: true });
 
     await expect(
-      service.createBackup('user-1', { description: 'x', type: 'cloud', cloudProvider: 'aws', cloudPath: '   ' })
-    ).rejects.toThrow('Cloud path is required for cloud backups');
+      service.createBackup('user-1', { description: 'x', type: 'cloud', cloudProvider: 'gcp', cloudPath: '   ' })
+    ).rejects.toThrow('Cloud path cannot be empty when provided');
   });
 
   it('rejects createBackup with invalid retention days', async () => {
@@ -215,6 +258,67 @@ describe('BackupService', () => {
     expect(result.id).toBe('backup-1');
     expect(backupRepository.create).toHaveBeenCalled();
     expect(backupRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('creates cloud backup and uploads with generated path when cloudPath is omitted', async () => {
+    const service = new BackupService();
+    const now = new Date('2026-01-01T00:00:00.000Z');
+
+    userRepository.findOne.mockResolvedValue({
+      id: 'user-1',
+      email: 'user@example.com',
+      name: 'User',
+      preferences: {}
+    });
+
+    accountRepository.find.mockResolvedValue([{ id: 'acc-1' }]);
+    accountServiceMock.getDecryptedBackupData.mockResolvedValue({
+      name: 'Github',
+      secret: 'RAWSECRET',
+      algorithm: 'SHA1',
+      digits: 6,
+      period: 30
+    });
+
+    encryptionMock.encryptBackupData.mockReturnValue('encrypted-backup-data');
+
+    const backupEntity = {
+      id: 'backup-1',
+      description: 'Cloud backup',
+      type: 'cloud',
+      cloudProvider: null,
+      cloudPath: null,
+      size: 120,
+      checksum: 'abc',
+      version: '1.0.0',
+      createdAt: now,
+      expiresAt: now,
+      isActive: true
+    };
+
+    backupRepository.create.mockReturnValue(backupEntity);
+    backupRepository.save.mockResolvedValue(undefined);
+
+    const result = await service.createBackup('user-1', {
+      description: 'Cloud backup',
+      type: 'cloud',
+      cloudProvider: 'gcp'
+    });
+
+    expect(cloudProviderMock.buildDefaultPath).toHaveBeenCalledWith({
+      userId: 'user-1',
+      backupId: 'backup-1',
+      createdAt: now
+    });
+    expect(cloudProviderMock.upload).toHaveBeenCalledWith({
+      userId: 'user-1',
+      backupId: 'backup-1',
+      data: 'encrypted-backup-data',
+      cloudPath: 'user-1/2026-01-01/backup-1.enc'
+    });
+    expect(result.cloudProvider).toBe('gcp');
+    expect(result.cloudPath).toBe('user-1/2026-01-01/backup-1.enc');
+    expect(backupRepository.save).toHaveBeenCalledTimes(2);
   });
 
   it('rejects createBackup when account list is empty', async () => {
@@ -331,14 +435,17 @@ describe('BackupService', () => {
 
   it('deletes cloud backup and marks inactive', async () => {
     const service = new BackupService();
-    const deleteFromCloudSpy = jest.spyOn(service as unknown as { deleteFromCloud: (...args: unknown[]) => Promise<void> }, 'deleteFromCloud').mockResolvedValue(undefined);
 
-    const backup = { id: 'b1', userId: 'user-1', type: 'cloud', cloudProvider: 'aws', cloudPath: '/x', isActive: true };
+    const backup = { id: 'b1', userId: 'user-1', type: 'cloud', cloudProvider: 'gcp', cloudPath: '/x', isActive: true };
     backupRepository.findOne.mockResolvedValue(backup);
 
     await service.deleteBackup('user-1', 'b1');
 
-    expect(deleteFromCloudSpy).toHaveBeenCalledWith('aws', '/x');
+    expect(cloudProviderMock.delete).toHaveBeenCalledWith({
+      userId: 'user-1',
+      backupId: 'b1',
+      cloudPath: '/x'
+    });
     expect(backup.isActive).toBe(false);
     expect(backupRepository.save).toHaveBeenCalledWith(backup);
   });
@@ -355,10 +462,16 @@ describe('BackupService', () => {
     });
     backupRepository.save.mockResolvedValue(undefined);
 
-    await service.uploadToCloud('user-1', 'backup-1', 'aws', 'path/file.enc');
+    await service.uploadToCloud('user-1', 'backup-1', 'gcp', 'path/file.enc');
 
     expect(backupRepository.findOne).toHaveBeenCalledWith({
       where: { id: 'backup-1', userId: 'user-1', isActive: true }
+    });
+    expect(cloudProviderMock.upload).toHaveBeenCalledWith({
+      userId: 'user-1',
+      backupId: 'backup-1',
+      data: undefined,
+      cloudPath: 'path/file.enc'
     });
   });
 
@@ -366,7 +479,7 @@ describe('BackupService', () => {
     const service = new BackupService();
     backupRepository.findOne.mockResolvedValue(null);
 
-    await expect(service.uploadToCloud('user-1', 'missing', 'aws', '/path')).rejects.toThrow('Backup not found');
+    await expect(service.uploadToCloud('user-1', 'missing', 'gcp', '/path')).rejects.toThrow('Backup not found');
   });
 
   it('throws when cloud download backup is missing', async () => {
@@ -398,7 +511,7 @@ describe('BackupService', () => {
     backupRepository.findOne.mockResolvedValue({
       id: 'backup-1',
       userId: 'user-1',
-      cloudProvider: 'aws',
+      cloudProvider: 'gcp',
       cloudPath: '/b.enc',
       data: 'encrypted-payload',
       isActive: true
@@ -406,7 +519,12 @@ describe('BackupService', () => {
 
     const result = await service.downloadFromCloud('user-1', 'backup-1');
 
-    expect(result).toBe('encrypted-payload');
+    expect(result).toBe('encrypted-cloud-payload');
+    expect(cloudProviderMock.download).toHaveBeenCalledWith({
+      userId: 'user-1',
+      backupId: 'backup-1',
+      cloudPath: '/b.enc'
+    });
   });
 
   it('returns number of cleaned expired backups', async () => {

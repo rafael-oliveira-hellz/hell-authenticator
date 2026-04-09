@@ -112,6 +112,22 @@ describe('accounts routes contract', () => {
     expect(response.json()).toEqual({ account: { id: 'created' } });
   });
 
+  it('creates account without secret when backend should generate one', async () => {
+    accountServiceMocks.createAccount.mockResolvedValue({ id: 'generated' });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/accounts',
+      payload: {
+        name: 'Discord',
+        period: 30
+      }
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toEqual({ account: { id: 'generated' } });
+  });
+
   it('returns 409 when create account conflicts', async () => {
     accountServiceMocks.createAccount.mockRejectedValue(new Error('Account with this name already exists'));
 

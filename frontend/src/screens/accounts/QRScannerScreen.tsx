@@ -26,7 +26,7 @@ export const QRScannerScreen: React.FC = () => {
     const parsed = totpService.parseQRCodeURI(data);
     if (!parsed || parsed.type !== 'totp') {
       hasScannedRef.current = true;
-      Alert.alert('QR invalido', 'Este QR nao e um otpauth TOTP valido.', [
+      Alert.alert('QR inválido', 'Este QR Code não contém um otpauth TOTP válido.', [
         { text: 'OK', onPress: () => { hasScannedRef.current = false; } },
       ]);
       return;
@@ -65,16 +65,16 @@ export const QRScannerScreen: React.FC = () => {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { backgroundColor: colors.surface }]}>
           <Text style={[styles.title, { color: colors.text }]}>Scanner QR</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Permita acesso a camera para escanear QR TOTP.</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Permita acesso à câmera para escanear um QR Code TOTP.</Text>
         </View>
         <View style={styles.body}>
           <TouchableOpacity style={styles.scanButton} onPress={requestPermission}>
-            <Text style={styles.scanButtonText}>Permitir camera</Text>
+            <Text style={styles.scanButtonText}>Permitir câmera</Text>
           </TouchableOpacity>
         </View>
         <View style={[styles.footer, { backgroundColor: colors.surface }]}>
           <TouchableOpacity onPress={() => navigation.navigate('ManualEntry')}>
-            <Text style={[styles.link, { color: colors.primary }]}>Entrada Manual</Text>
+            <Text style={[styles.link, { color: colors.primary }]}>Adicionar manualmente</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -86,11 +86,11 @@ export const QRScannerScreen: React.FC = () => {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { backgroundColor: colors.surface }]}>
           <Text style={[styles.title, { color: colors.text }]}>Scanner QR</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Camera traseira indisponivel neste dispositivo.</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Câmera traseira indisponível neste dispositivo.</Text>
         </View>
         <View style={[styles.footer, { backgroundColor: colors.surface }]}>
           <TouchableOpacity onPress={() => navigation.navigate('ManualEntry')}>
-            <Text style={[styles.link, { color: colors.primary }]}>Entrada Manual</Text>
+            <Text style={[styles.link, { color: colors.primary }]}>Adicionar manualmente</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -101,7 +101,7 @@ export const QRScannerScreen: React.FC = () => {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface }]}>
         <Text style={[styles.title, { color: colors.text }]}>Scanner QR</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Aponte para um QR otpauth://</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Aponte para um QR Code no formato `otpauth://`.</Text>
       </View>
 
       <View style={styles.cameraContainer}>
@@ -118,7 +118,7 @@ export const QRScannerScreen: React.FC = () => {
 
       <View style={[styles.footer, { backgroundColor: colors.surface }]}>
         <TouchableOpacity onPress={() => navigation.navigate('ManualEntry')}>
-          <Text style={[styles.link, { color: colors.primary }]}>Entrada Manual</Text>
+          <Text style={[styles.link, { color: colors.primary }]}>Adicionar manualmente</Text>
         </TouchableOpacity>
       </View>
     </View>

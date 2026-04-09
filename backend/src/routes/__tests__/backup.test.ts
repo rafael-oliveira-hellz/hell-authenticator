@@ -2,6 +2,7 @@ import Fastify, { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 
 const serviceMocks = {
   listBackups: jest.fn(),
+  listCloudProviders: jest.fn(),
   createBackup: jest.fn(),
   getBackup: jest.fn(),
   restoreBackup: jest.fn(),
@@ -10,6 +11,17 @@ const serviceMocks = {
   downloadFromCloud: jest.fn(),
   getBackupStats: jest.fn(),
   cleanupExpiredBackups: jest.fn()
+};
+
+const userCloudConnectionServiceMocks = {
+  listConnections: jest.fn(),
+  connectProvider: jest.fn(),
+  disconnectProvider: jest.fn(),
+};
+
+const userCloudOAuthServiceMocks = {
+  startAuthorization: jest.fn(),
+  handleCallback: jest.fn(),
 };
 
 type MockUser = { id: string; isPremium: boolean; email: string } | null;
@@ -34,6 +46,14 @@ const requirePremiumMock = jest.fn(async (_request: FastifyRequest, reply: Fasti
 
 jest.mock('../../services/BackupService', () => ({
   BackupService: jest.fn().mockImplementation(() => serviceMocks)
+}));
+
+jest.mock('../../services/UserCloudConnectionService', () => ({
+  UserCloudConnectionService: jest.fn().mockImplementation(() => userCloudConnectionServiceMocks),
+}));
+
+jest.mock('../../services/UserCloudOAuthService', () => ({
+  UserCloudOAuthService: jest.fn().mockImplementation(() => userCloudOAuthServiceMocks),
 }));
 
 jest.mock('../../middlewares/auth', () => ({
@@ -80,6 +100,105 @@ describe('backup routes contract and authz regressions', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ backups: [{ id: 'b1' }] });
+  });
+
+  it('lists cloud providers', async () => {
+    serviceMocks.listCloudProviders.mockResolvedValue([
+      { id: 'gcp', label: 'Nuvem do app', verificationStatus: 'verified' }
+    ]);
+
+    const response = await app.inject({ method: 'GET', url: '/api/backup/providers' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      providers: [{ id: 'gcp', label: 'Nuvem do app', verificationStatus: 'verified' }]
+    });
+  });
+
+  it('lists user cloud connections', async () => {
+    userCloudConnectionServiceMocks.listConnections.mockResolvedValue([
+      { id: 'conn-1', provider: 'google-drive', status: 'connected' },
+    ]);
+
+    const response = await app.inject({ method: 'GET', url: '/api/backup/user-cloud-connections' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      connections: [{ id: 'conn-1', provider: 'google-drive', status: 'connected' }],
+    });
+  });
+
+  it('connects a user cloud provider', async () => {
+    userCloudConnectionServiceMocks.connectProvider.mockResolvedValue({
+      id: 'conn-1',
+      provider: 'google-drive',
+      status: 'connected',
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/backup/user-cloud-connections/connect',
+      payload: {
+        provider: 'google-drive',
+        accessToken: 'token-value',
+        accountEmail: 'user@example.com',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(userCloudConnectionServiceMocks.connectProvider).toHaveBeenCalledWith('user-1', {
+      provider: 'google-drive',
+      accessToken: 'token-value',
+      accountEmail: 'user@example.com',
+    });
+  });
+
+  it('disconnects a user cloud provider', async () => {
+    userCloudConnectionServiceMocks.disconnectProvider.mockResolvedValue(undefined);
+
+    const response = await app.inject({
+      method: 'DELETE',
+      url: '/api/backup/user-cloud-connections/google-drive',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(userCloudConnectionServiceMocks.disconnectProvider).toHaveBeenCalledWith('user-1', 'google-drive');
+  });
+
+  it('starts user cloud oauth authorization', async () => {
+    userCloudOAuthServiceMocks.startAuthorization.mockResolvedValue({
+      provider: 'google-drive',
+      authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth?state=abc',
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/backup/user-cloud-connections/oauth/start',
+      payload: {
+        provider: 'google-drive',
+        successRedirectUri: 'hellauthenticator://cloud/success',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(userCloudOAuthServiceMocks.startAuthorization).toHaveBeenCalledWith('user-1', {
+      provider: 'google-drive',
+      successRedirectUri: 'hellauthenticator://cloud/success',
+    });
+  });
+
+  it('delegates oauth callback handling', async () => {
+    userCloudOAuthServiceMocks.handleCallback.mockImplementation(async (_query, reply) => {
+      reply.status(200).send({ ok: true });
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/backup/user-cloud-connections/oauth/callback?code=abc&state=xyz',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(userCloudOAuthServiceMocks.handleCallback).toHaveBeenCalled();
   });
 
   it('returns 500 when listing backups fails', async () => {
@@ -198,7 +317,7 @@ describe('backup routes contract and authz regressions', () => {
       method: 'POST',
       url: '/api/backup/backup-123/upload-to-cloud',
       payload: {
-        cloudProvider: 'aws',
+        cloudProvider: 'gcp',
         cloudPath: 'users/user-1/backup-123.enc'
       }
     });
@@ -207,7 +326,7 @@ describe('backup routes contract and authz regressions', () => {
     expect(serviceMocks.uploadToCloud).toHaveBeenCalledWith(
       'user-1',
       'backup-123',
-      'aws',
+      'gcp',
       'users/user-1/backup-123.enc'
     );
   });
@@ -218,7 +337,7 @@ describe('backup routes contract and authz regressions', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/backup/backup-404/upload-to-cloud',
-      payload: { cloudProvider: 'aws', cloudPath: 'p' }
+      payload: { cloudProvider: 'gcp', cloudPath: 'p' }
     });
 
     expect(response.statusCode).toBe(404);

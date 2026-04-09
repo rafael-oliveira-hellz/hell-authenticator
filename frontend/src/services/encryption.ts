@@ -23,7 +23,7 @@ class EncryptionService {
     const runtime = (globalThis as unknown as { crypto?: CryptoRuntime }).crypto;
     const subtle = runtime?.subtle;
     if (!subtle) {
-      throw new Error('AES-GCM indisponivel no runtime atual');
+      throw new Error('AES-GCM indisponível no runtime atual');
     }
     return subtle;
   }
@@ -32,7 +32,7 @@ class EncryptionService {
     const values = new Uint8Array(length);
     const runtime = (globalThis as unknown as { crypto?: CryptoRuntime }).crypto;
     if (!runtime?.getRandomValues) {
-      throw new Error('CSPRNG indisponivel no runtime atual');
+      throw new Error('CSPRNG indisponível no runtime atual');
     }
     runtime.getRandomValues(values);
     return values;
@@ -247,7 +247,7 @@ class EncryptionService {
     const decrypted = await this.decrypt(payload.encrypted, payload.iv, payload.authTag, key);
 
     if (!decrypted.isValid) {
-      throw new Error('Dados de backup invalidos ou corrompidos');
+      throw new Error('Dados de backup inválidos ou corrompidos');
     }
 
     return JSON.parse(decrypted.decrypted) as Record<string, unknown>;
@@ -348,19 +348,19 @@ class EncryptionService {
     if (/[A-Z]/.test(password)) {
       score += 1;
     } else {
-      feedback.push('Adicione letras maiusculas');
+      feedback.push('Adicione letras maiúsculas');
     }
 
     if (/[a-z]/.test(password)) {
       score += 1;
     } else {
-      feedback.push('Adicione letras minusculas');
+      feedback.push('Adicione letras minúsculas');
     }
 
     if (/\d/.test(password)) {
       score += 1;
     } else {
-      feedback.push('Adicione numeros');
+      feedback.push('Adicione números');
     }
 
     if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {

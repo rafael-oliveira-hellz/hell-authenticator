@@ -7,6 +7,7 @@ import { Backup } from '../models/Backup';
 import { User } from '../models/User';
 import {
     BackupResponse,
+    CloudProviderResponse,
     CloudProvider,
     CreateBackupRequest,
     RestoreBackupRequest
@@ -14,6 +15,7 @@ import {
 import { CreateBackupUseCase } from '../application/use-cases/backup/CreateBackupUseCase';
 import { RestoreBackupUseCase } from '../application/use-cases/backup/RestoreBackupUseCase';
 import { AccountService } from './AccountService';
+import { CloudBackupProviderRegistry } from './cloud/CloudBackupProviderRegistry';
 import { EncryptionService } from './EncryptionService';
 import { logger } from '../utils/logger';
 
@@ -25,6 +27,7 @@ export class BackupService {
   private accountService = new AccountService();
   private createBackupUseCase: CreateBackupUseCase;
   private restoreBackupUseCase: RestoreBackupUseCase;
+  private cloudProviderRegistry = new CloudBackupProviderRegistry();
 
   constructor() {
     this.createBackupUseCase = new CreateBackupUseCase({
@@ -70,6 +73,11 @@ export class BackupService {
     return this.createBackupUseCase.execute({ userId, data });
   }
 
+  async listCloudProviders(): Promise<CloudProviderResponse[]> {
+    const providers = await this.cloudProviderRegistry.list();
+    return providers.filter((provider) => provider.id === 'gcp');
+  }
+
   /**
    * Restaura um backup
    */
@@ -97,7 +105,7 @@ export class BackupService {
     }
 
     if (backup.type === 'cloud' && backup.cloudProvider && backup.cloudPath) {
-      await this.deleteFromCloud(backup.cloudProvider, backup.cloudPath);
+      await this.deleteFromCloud(backup.cloudProvider as CloudProvider, backup.cloudPath, backup.id, userId);
     }
 
     backup.isActive = false;
@@ -121,8 +129,26 @@ export class BackupService {
       throw new Error('Backup not found');
     }
 
+    const provider = this.cloudProviderRegistry.get(cloudProvider);
+    const resolvedCloudPath = cloudPath.trim() || provider.buildDefaultPath({
+      userId,
+      backupId: backup.id,
+      createdAt: backup.createdAt
+    });
+
+    try {
+      await provider.upload({
+        userId,
+        backupId: backup.id,
+        data: backup.data,
+        cloudPath: resolvedCloudPath
+      });
+    } catch (error) {
+      throw this.wrapCloudProviderError('upload', provider.descriptor.label, error);
+    }
+
     backup.cloudProvider = cloudProvider;
-    backup.cloudPath = cloudPath;
+    backup.cloudPath = resolvedCloudPath;
     backup.type = 'cloud';
     await this.backupRepository.save(backup);
   }
@@ -143,13 +169,34 @@ export class BackupService {
       throw new Error('Backup is not stored in cloud');
     }
 
-    return backup.data;
+    const provider = this.cloudProviderRegistry.get(backup.cloudProvider as CloudProvider);
+
+    try {
+      return await provider.download({
+        userId,
+        backupId: backup.id,
+        cloudPath: backup.cloudPath
+      });
+    } catch (error) {
+      throw this.wrapCloudProviderError('download', provider.descriptor.label, error);
+    }
   }
 
   /**
    * Remove backup da cloud storage
    */
-  private async deleteFromCloud(_cloudProvider: string, _cloudPath: string): Promise<void> {
+  private async deleteFromCloud(cloudProvider: CloudProvider, cloudPath: string, backupId?: string, userId?: string): Promise<void> {
+    const provider = this.cloudProviderRegistry.get(cloudProvider);
+
+    try {
+      await provider.delete({
+        userId: userId || 'unknown',
+        backupId: backupId || 'unknown',
+        cloudPath
+      });
+    } catch (error) {
+      throw this.wrapCloudProviderError('delete', provider.descriptor.label, error);
+    }
   }
 
   /**
@@ -266,6 +313,30 @@ export class BackupService {
 
     await this.backupRepository.save(backup);
 
+    if (data.type === 'cloud' && data.cloudProvider) {
+      const provider = this.cloudProviderRegistry.get(data.cloudProvider);
+      const resolvedCloudPath = data.cloudPath?.trim() || provider.buildDefaultPath({
+        userId,
+        backupId: backup.id,
+        createdAt: backup.createdAt
+      });
+
+      try {
+        await provider.upload({
+          userId,
+          backupId: backup.id,
+          data: encryptedData,
+          cloudPath: resolvedCloudPath
+        });
+      } catch (error) {
+        throw this.wrapCloudProviderError('upload', provider.descriptor.label, error);
+      }
+
+      backup.cloudProvider = data.cloudProvider;
+      backup.cloudPath = resolvedCloudPath;
+      await this.backupRepository.save(backup);
+    }
+
     return this.backupToResponse(backup);
   }
 
@@ -343,11 +414,11 @@ export class BackupService {
     }
 
     if (data.type === 'cloud') {
-      if (!data.cloudProvider || !['aws', 'gcp', 'azure', 'dropbox', 'onedrive'].includes(data.cloudProvider)) {
-        throw new Error('Invalid cloud provider');
+      if (data.cloudProvider !== 'gcp') {
+        throw new Error('Invalid cloud provider. Internal cloud backups must use gcp');
       }
-      if (!data.cloudPath || data.cloudPath.trim().length === 0) {
-        throw new Error('Cloud path is required for cloud backups');
+      if (data.cloudPath && data.cloudPath.trim().length === 0) {
+        throw new Error('Cloud path cannot be empty when provided');
       }
     }
 
@@ -372,5 +443,25 @@ export class BackupService {
       createdAt: backup.createdAt.toISOString(),
       expiresAt: backup.expiresAt.toISOString()
     };
+  }
+
+  private wrapCloudProviderError(
+    operation: 'upload' | 'download' | 'delete',
+    providerLabel: string,
+    error: unknown
+  ): Error {
+    const action = operation === 'upload'
+      ? 'upload backup to'
+      : operation === 'download'
+        ? 'download backup from'
+        : 'delete backup from';
+
+    logger.error('Cloud backup provider operation failed', {
+      operation,
+      provider: providerLabel,
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    return new Error(`Failed to ${action} ${providerLabel}`);
   }
 }

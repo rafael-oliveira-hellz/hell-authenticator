@@ -122,6 +122,7 @@ services:
     environment:
       # Configuracoes do ambiente
       NODE_ENV: ${NODE_ENV}
+      HOST: ${HOST}
       PORT: 3000
 
       # Banco de dados
@@ -151,19 +152,30 @@ services:
       AWS_REGION: ${AWS_REGION}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      LOCALSTACK_SERVICES: ${LOCALSTACK_SERVICES}
+      LOCALSTACK_DEBUG: ${LOCALSTACK_DEBUG}
 
       # Monitoramento
       PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED}
-      PROMETHEUS_PORT: 9090
+      PROMETHEUS_PORT: ${PROMETHEUS_PORT}
 
       # Logs
       LOG_LEVEL: ${LOG_LEVEL}
 
-      # CORS
+      # CORS / Seguranca
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
-
-      # Proxies
       TRUST_PROXY: ${TRUST_PROXY}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX}
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW}
+
+      # OAuth - Google Drive
+      GOOGLE_DRIVE_OAUTH_CLIENT_ID: ${GOOGLE_DRIVE_OAUTH_CLIENT_ID}
+      GOOGLE_DRIVE_OAUTH_CLIENT_SECRET: ${GOOGLE_DRIVE_OAUTH_CLIENT_SECRET}
+      GOOGLE_DRIVE_OAUTH_REDIRECT_URI: ${GOOGLE_DRIVE_OAUTH_REDIRECT_URI}
+
+      # Frontend / App
+      API_BASE_URL: ${API_BASE_URL}
+      REACT_NATIVE_PACKAGER_HOSTNAME: ${REACT_NATIVE_PACKAGER_HOSTNAME}
     volumes:
       - ./backend:/app
       - /app/node_modules

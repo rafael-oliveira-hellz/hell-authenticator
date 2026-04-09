@@ -1,4 +1,4 @@
-﻿import { NavigationContainer } from '@react-navigation/native';
+﻿import { LinkingOptions, NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { useEffect } from 'react';
 import { LogBox, NativeModules, StatusBar, StyleSheet, View } from 'react-native';
@@ -12,6 +12,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { AppNavigator } from '@/navigation/AppNavigator';
 import { store, useAppDispatch } from '@/store';
+import { RootStackParamList } from '@/types';
 import {
   checkNetworkStatus,
   checkPermissions,
@@ -41,6 +42,23 @@ LogBox.ignoreLogs([
 
 const hasSafeAreaNativeModule = Boolean((NativeModules as Record<string, unknown>).RNCSafeAreaContext);
 
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ['hellauthenticator://'],
+  config: {
+    screens: {
+      Main: {
+        screens: {
+          Backup: {
+            screens: {
+              CloudSettings: 'backup/cloud-settings',
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
 const AppContent: React.FC = () => {
   const dispatch = useAppDispatch();
   const { isDark, colors } = useTheme();
@@ -68,7 +86,7 @@ const AppContent: React.FC = () => {
   }, [dispatch]);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={colors.background}

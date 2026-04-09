@@ -49,7 +49,7 @@ export const AccountDetailScreen: React.FC = () => {
   }, [account]);
 
   const confirmDelete = () => {
-    Alert.alert('Excluir conta', 'Esta acao nao pode ser desfeita. Deseja continuar?', [
+    Alert.alert('Excluir conta', 'Esta ação não pode ser desfeita. Deseja continuar?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Excluir',
@@ -57,7 +57,7 @@ export const AccountDetailScreen: React.FC = () => {
         onPress: () =>
           deleteMutation.mutate(undefined, {
             onSuccess: () => navigation.goBack(),
-            onError: () => Alert.alert('Erro', 'Nao foi possivel excluir a conta.'),
+            onError: () => Alert.alert('Erro', 'Não foi possível excluir a conta.'),
           }),
       },
     ]);
@@ -77,10 +77,10 @@ export const AccountDetailScreen: React.FC = () => {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.scroll}>
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <Text style={[styles.name, { color: colors.text }]}>{account.name}</Text>
-        <Text style={[styles.meta, { color: colors.textSecondary }]}>{account.issuer || 'Sem issuer'}</Text>
+        <Text style={[styles.meta, { color: colors.textSecondary }]}>{account.issuer || 'Sem emissor'}</Text>
 
         <View style={styles.codeBox}>
-          <Text style={[styles.codeLabel, { color: colors.textSecondary }]}>Codigo atual</Text>
+          <Text style={[styles.codeLabel, { color: colors.textSecondary }]}>Código atual</Text>
           <Text style={[styles.code, { color: colors.text }]}>{totpCode?.code || '------'}</Text>
           <Text style={[styles.timer, { color: totpCode && totpCode.remainingTime <= 5 ? colors.error : colors.textSecondary }]}>
             {totpCode ? `${totpCode.remainingTime}s` : '--'}
@@ -89,8 +89,8 @@ export const AccountDetailScreen: React.FC = () => {
 
         <View style={styles.infoList}>
           <Text style={[styles.info, { color: colors.text }]}>Algoritmo: {account.algorithm}</Text>
-          <Text style={[styles.info, { color: colors.text }]}>Digitos: {account.digits}</Text>
-          <Text style={[styles.info, { color: colors.text }]}>Periodo: {account.period}s</Text>
+          <Text style={[styles.info, { color: colors.text }]}>Dígitos: {account.digits}</Text>
+          <Text style={[styles.info, { color: colors.text }]}>Período: {account.period}s</Text>
           <Text style={[styles.info, { color: colors.text }]}>Uso: {account.usageCount}</Text>
         </View>
 

@@ -1,14 +1,13 @@
-import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { AccountStackParamList } from '@/types';
+import React from 'react';
 
-// Importar telas (serão criadas posteriormente)
-import { AccountListScreen } from '@/screens/accounts/AccountListScreen';
-import { AccountDetailScreen } from '@/screens/accounts/AccountDetailScreen';
 import { AddAccountScreen } from '@/screens/accounts/AddAccountScreen';
+import { AccountDetailScreen } from '@/screens/accounts/AccountDetailScreen';
+import { AccountListScreen } from '@/screens/accounts/AccountListScreen';
 import { EditAccountScreen } from '@/screens/accounts/EditAccountScreen';
-import { QRScannerScreen } from '@/screens/accounts/QRScannerScreen';
 import { ManualEntryScreen } from '@/screens/accounts/ManualEntryScreen';
+import { QRScannerScreen } from '@/screens/accounts/QRScannerScreen';
+import { AccountStackParamList } from '@/types';
 
 const Stack = createStackNavigator<AccountStackParamList>();
 
@@ -27,46 +26,46 @@ export const AccountsNavigator: React.FC = () => {
       }}
       initialRouteName="AccountList"
     >
-      <Stack.Screen 
-        name="AccountList" 
+      <Stack.Screen
+        name="AccountList"
         component={AccountListScreen}
         options={{
-          title: 'Minhas Contas',
+          title: 'Minhas contas',
         }}
       />
-      <Stack.Screen 
-        name="AccountDetail" 
+      <Stack.Screen
+        name="AccountDetail"
         component={AccountDetailScreen}
         options={{
-          title: 'Detalhes da Conta',
+          title: 'Detalhes da conta',
         }}
       />
-      <Stack.Screen 
-        name="AddAccount" 
+      <Stack.Screen
+        name="AddAccount"
         component={AddAccountScreen}
         options={{
-          title: 'Adicionar Conta',
+          title: 'Confirmar conta',
         }}
       />
-      <Stack.Screen 
-        name="EditAccount" 
+      <Stack.Screen
+        name="EditAccount"
         component={EditAccountScreen}
         options={{
-          title: 'Editar Conta',
+          title: 'Editar conta',
         }}
       />
-      <Stack.Screen 
-        name="QRScanner" 
+      <Stack.Screen
+        name="QRScanner"
         component={QRScannerScreen}
         options={{
-          title: 'Scanner QR Code',
+          title: 'Escanear QR Code',
         }}
       />
-      <Stack.Screen 
-        name="ManualEntry" 
+      <Stack.Screen
+        name="ManualEntry"
         component={ManualEntryScreen}
         options={{
-          title: 'Entrada Manual',
+          title: 'Adicionar manualmente',
         }}
       />
     </Stack.Navigator>

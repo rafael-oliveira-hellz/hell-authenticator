@@ -13,6 +13,7 @@ The backend package powers the Hell Authenticator API. It is built with Fastify,
 - [Running the Service](#running-the-service)
 - [Database and Seed Workflow](#database-and-seed-workflow)
 - [Docker](#docker)
+- [Cloud Backup Providers](#cloud-backup-providers)
 - [API Surface](#api-surface)
 - [Security Notes](#security-notes)
 - [Scripts](#scripts)
@@ -206,6 +207,23 @@ cd backend
 npm run docker:build
 npm run docker:run
 ```
+
+## Cloud Backup Providers
+
+The backend can expose real cloud backup integrations for:
+
+- AWS S3
+- Google Cloud Storage
+- Azure Blob Storage
+- Dropbox
+- OneDrive
+- Google Drive
+
+Provider availability is environment-driven. A provider appears as connected only when its required variables are configured in [backend/.env.example](E:\08%20-%20Hell%20Authenticator\backend\.env.example) or your local `backend/.env`.
+
+For a complete setup and validation guide, see:
+
+- [backend/docs/cloud-backup-validation.md](E:\08%20-%20Hell%20Authenticator\backend\docs\cloud-backup-validation.md)
 
 ## API Surface
 

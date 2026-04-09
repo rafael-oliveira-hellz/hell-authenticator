@@ -1,7 +1,16 @@
 ﻿import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { authMiddleware } from '../middlewares/auth';
 import { BackupService } from '../services/BackupService';
-import { CloudProvider, CreateBackupRequest, RestoreBackupRequest } from '../types';
+import { UserCloudConnectionService } from '../services/UserCloudConnectionService';
+import { UserCloudOAuthService } from '../services/UserCloudOAuthService';
+import {
+  CloudProvider,
+  ConnectUserCloudProviderRequest,
+  CreateBackupRequest,
+  RestoreBackupRequest,
+  StartUserCloudOAuthRequest,
+  UserCloudProvider,
+} from '../types';
 
 type AuthUser = {
   id: string;
@@ -12,6 +21,7 @@ type AuthUser = {
 type AuthenticatedFastifyRequest = FastifyRequest & { user?: AuthUser };
 type BackupParams = { id: string };
 type UploadToCloudBody = { cloudProvider: CloudProvider; cloudPath: string };
+type UserCloudProviderParams = { provider: UserCloudProvider };
 
 const getAuthenticatedUser = (request: FastifyRequest, reply: FastifyReply): AuthUser | null => {
   const user = (request as AuthenticatedFastifyRequest).user;
@@ -29,6 +39,8 @@ const getAuthenticatedUser = (request: FastifyRequest, reply: FastifyReply): Aut
 
 export default async function backupRoutes(fastify: FastifyInstance) {
   const backupService = new BackupService();
+  const userCloudConnectionService = new UserCloudConnectionService();
+  const userCloudOAuthService = new UserCloudOAuthService();
 
   const createBackupSchema = {
     type: 'object',
@@ -45,7 +57,7 @@ export default async function backupRoutes(fastify: FastifyInstance) {
       },
       cloudProvider: {
         type: 'string',
-        enum: ['aws', 'gcp', 'azure', 'dropbox', 'onedrive']
+        enum: ['gcp']
       },
       cloudPath: {
         type: 'string',
@@ -71,6 +83,58 @@ export default async function backupRoutes(fastify: FastifyInstance) {
     }
   };
 
+  const connectUserCloudProviderSchema = {
+    type: 'object',
+    required: ['provider', 'accessToken'],
+    properties: {
+      provider: {
+        type: 'string',
+        enum: ['google-drive'],
+      },
+      accessToken: {
+        type: 'string',
+        minLength: 1,
+      },
+      refreshToken: {
+        type: 'string',
+      },
+      accountEmail: {
+        type: 'string',
+      },
+      externalAccountId: {
+        type: 'string',
+      },
+      expiresAt: {
+        type: 'string',
+      },
+      scopes: {
+        type: 'array',
+        items: { type: 'string' },
+      },
+      metadata: {
+        type: 'object',
+        additionalProperties: true,
+      },
+    },
+  };
+
+  const startUserCloudOAuthSchema = {
+    type: 'object',
+    required: ['provider'],
+    properties: {
+      provider: {
+        type: 'string',
+        enum: ['google-drive'],
+      },
+      successRedirectUri: {
+        type: 'string',
+      },
+      errorRedirectUri: {
+        type: 'string',
+      },
+    },
+  };
+
   fastify.get('/', {
     preHandler: [authMiddleware.authenticate]
   }, async (request, reply) => {
@@ -87,6 +151,128 @@ export default async function backupRoutes(fastify: FastifyInstance) {
         error: 'Internal Server Error',
         message: 'Failed to list backups'
       });
+    }
+  });
+
+  fastify.get('/providers', {
+    preHandler: [authMiddleware.authenticate]
+  }, async (request, reply) => {
+    const user = getAuthenticatedUser(request, reply);
+    if (!user) {
+      return;
+    }
+
+    try {
+      const providers = await backupService.listCloudProviders();
+      reply.status(200).send({ providers });
+    } catch {
+      reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to list cloud providers'
+      });
+    }
+  });
+
+  fastify.get('/user-cloud-connections', {
+    preHandler: [authMiddleware.authenticate],
+  }, async (request, reply) => {
+    const user = getAuthenticatedUser(request, reply);
+    if (!user) {
+      return;
+    }
+
+    try {
+      const connections = await userCloudConnectionService.listConnections(user.id);
+      reply.status(200).send({ connections });
+    } catch {
+      reply.status(500).send({
+        error: 'Internal Server Error',
+        message: 'Failed to list user cloud connections',
+      });
+    }
+  });
+
+  fastify.post<{ Body: ConnectUserCloudProviderRequest }>('/user-cloud-connections/connect', {
+    preHandler: [authMiddleware.authenticate],
+    schema: {
+      body: connectUserCloudProviderSchema,
+    },
+  }, async (request, reply) => {
+    const user = getAuthenticatedUser(request, reply);
+    if (!user) {
+      return;
+    }
+
+    try {
+      const connection = await userCloudConnectionService.connectProvider(user.id, request.body);
+      reply.status(200).send({ connection });
+    } catch (error) {
+      if (error instanceof Error) {
+        reply.status(400).send({
+          error: 'Bad Request',
+          message: error.message,
+        });
+      } else {
+        reply.status(500).send({
+          error: 'Internal Server Error',
+          message: 'Failed to connect user cloud provider',
+        });
+      }
+    }
+  });
+
+  fastify.post<{ Body: StartUserCloudOAuthRequest }>('/user-cloud-connections/oauth/start', {
+    preHandler: [authMiddleware.authenticate],
+    schema: {
+      body: startUserCloudOAuthSchema,
+    },
+  }, async (request, reply) => {
+    const user = getAuthenticatedUser(request, reply);
+    if (!user) {
+      return;
+    }
+
+    try {
+      const result = await userCloudOAuthService.startAuthorization(user.id, request.body);
+      reply.status(200).send(result);
+    } catch (error) {
+      reply.status(400).send({
+        error: 'Bad Request',
+        message: error instanceof Error ? error.message : 'Failed to start OAuth authorization',
+      });
+    }
+  });
+
+  fastify.get('/user-cloud-connections/oauth/callback', async (request, reply) => {
+    const query = request.query as Record<string, string | undefined>;
+    await userCloudOAuthService.handleCallback(query, reply);
+  });
+
+  fastify.delete<{ Params: UserCloudProviderParams }>('/user-cloud-connections/:provider', {
+    preHandler: [authMiddleware.authenticate],
+  }, async (request, reply) => {
+    const user = getAuthenticatedUser(request, reply);
+    if (!user) {
+      return;
+    }
+
+    try {
+      await userCloudConnectionService.disconnectProvider(user.id, request.params.provider);
+      reply.status(200).send({
+        message: 'User cloud provider disconnected successfully',
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('not found')) {
+        reply.status(404).send({
+          error: 'Not Found',
+          message: error.message,
+        });
+      } else {
+        reply.status(500).send({
+          error: 'Internal Server Error',
+          message: 'Failed to disconnect user cloud provider',
+        });
+      }
     }
   });
 
@@ -226,7 +412,7 @@ export default async function backupRoutes(fastify: FastifyInstance) {
         properties: {
           cloudProvider: {
             type: 'string',
-            enum: ['aws', 'gcp', 'azure', 'dropbox', 'onedrive']
+            enum: ['gcp']
           },
           cloudPath: {
             type: 'string',

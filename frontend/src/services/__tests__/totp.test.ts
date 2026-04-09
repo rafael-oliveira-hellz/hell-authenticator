@@ -16,6 +16,22 @@ describe('totpService', () => {
     updatedAt: new Date().toISOString()
   };
 
+  beforeAll(() => {
+    const runtime = globalThis as typeof globalThis & {
+      crypto?: {
+        getRandomValues?: (array: Uint8Array) => Uint8Array;
+      };
+    };
+
+    runtime.crypto = runtime.crypto || {};
+    runtime.crypto.getRandomValues = (array: Uint8Array) => {
+      for (let index = 0; index < array.length; index += 1) {
+        array[index] = (index * 17 + 11) % 256;
+      }
+      return array;
+    };
+  });
+
   beforeEach(() => {
     jest.restoreAllMocks();
   });
@@ -35,6 +51,13 @@ describe('totpService', () => {
     expect(totpService.validateSecret('JBSWY3DPEHPK3PXP')).toBe(true);
     expect(totpService.validateSecret('invalid-secret')).toBe(false);
     expect(totpService.sanitizeSecret('jbsw y3dp-ehpk3pxp')).toBe('JBSWY3DPEHPK3PXP');
+  });
+
+  it('generates a base32 secret for new manual accounts', () => {
+    const secret = totpService.generateSecret();
+
+    expect(secret).toMatch(/^[A-Z2-7]{32}$/);
+    expect(totpService.validateSecret(secret)).toBe(true);
   });
 
   it('generates and parses otpauth URI', () => {

@@ -32,7 +32,7 @@ export default async function accountRoutes(fastify: FastifyInstance) {
 
   const createAccountSchema = {
     type: 'object',
-    required: ['name', 'secret'],
+    required: ['name'],
     properties: {
       name: { type: 'string', minLength: 1, maxLength: 255 },
       issuer: { type: 'string', maxLength: 255 },

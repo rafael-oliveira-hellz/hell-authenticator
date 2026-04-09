@@ -9,8 +9,10 @@ export type Theme = 'light' | 'dark' | 'auto';
 export type Language = 'pt-BR' | 'en-US' | 'es-ES';
 export type NotificationType = 'push' | 'email' | 'sms';
 export type DeviceType = 'mobile' | 'tablet' | 'desktop';
-export type CloudProvider = 'aws' | 'gcp' | 'azure' | 'dropbox' | 'onedrive';
+export type CloudProvider = 'aws' | 'gcp' | 'azure' | 'google-drive';
+export type UserCloudProvider = 'google-drive';
 export type BackupType = 'local' | 'cloud' | 'manual';
+export type UserCloudConnectionStatus = 'connected' | 'error' | 'disconnected';
 export type SessionStatus = 'active' | 'expired' | 'revoked';
 export type AccountStatus = 'active' | 'inactive' | 'archived';
 export type UserRole = 'user' | 'admin' | 'premium';
@@ -93,7 +95,7 @@ export interface RegisterRequest {
 export interface CreateAccountRequest {
   name: string;
   issuer?: string;
-  secret: string;
+  secret?: string;
   algorithm?: TOTPAlgorithm;
   digits?: TOTPDigits;
   period?: TOTPPeriod;
@@ -119,6 +121,57 @@ export interface CreateBackupRequest {
   cloudProvider?: CloudProvider;
   cloudPath?: string;
   retentionDays?: number;
+}
+
+export interface ConnectUserCloudProviderRequest {
+  provider: UserCloudProvider;
+  accessToken: string;
+  refreshToken?: string;
+  accountEmail?: string;
+  externalAccountId?: string;
+  expiresAt?: string;
+  scopes?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface StartUserCloudOAuthRequest {
+  provider: UserCloudProvider;
+  successRedirectUri?: string;
+  errorRedirectUri?: string;
+}
+
+export interface StartUserCloudOAuthResponse {
+  provider: UserCloudProvider;
+  authorizationUrl: string;
+}
+
+export interface CloudProviderResponse {
+  id: CloudProvider;
+  label: string;
+  description: string;
+  authMode: 'access-key' | 'bearer-token' | 'sas-token';
+  connectionStatus: 'connected' | 'not-configured';
+  verificationStatus: 'verified' | 'failed' | 'skipped';
+  verificationMessage?: string;
+  lastVerifiedAt?: string;
+  supportsAutomaticSetup: boolean;
+  supportsCustomPath: boolean;
+  requiredEnvVars: string[];
+  setupInstructions: string[];
+}
+
+export interface UserCloudConnectionResponse {
+  id: string;
+  provider: UserCloudProvider;
+  status: UserCloudConnectionStatus;
+  accountEmail?: string;
+  externalAccountId?: string;
+  expiresAt?: string;
+  lastVerifiedAt?: string;
+  scopes: string[];
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface RestoreBackupRequest {
@@ -155,6 +208,7 @@ export interface AccountResponse {
   id: string;
   name: string;
   issuer?: string;
+  secret: string;
   algorithm: TOTPAlgorithm;
   digits: TOTPDigits;
   period: TOTPPeriod;

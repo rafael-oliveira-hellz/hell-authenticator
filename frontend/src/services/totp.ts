@@ -13,6 +13,29 @@ class TOTPService {
   private readonly defaultAlgorithm: TOTPAlgorithm = 'SHA1';
   private readonly defaultDigits: TOTPDigits = 6;
   private readonly defaultPeriod: TOTPPeriod = 30;
+  private readonly base32Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+  private getRandomBytes(length: number): Uint8Array {
+    const runtime = (globalThis as unknown as { crypto?: { getRandomValues?: (array: Uint8Array) => Uint8Array } }).crypto;
+    if (!runtime?.getRandomValues) {
+      throw new Error('CSPRNG indisponível no runtime atual');
+    }
+
+    const bytes = new Uint8Array(length);
+    runtime.getRandomValues(bytes);
+    return bytes;
+  }
+
+  generateSecret(length: number = 32): string {
+    const bytes = this.getRandomBytes(length);
+    let output = '';
+
+    for (const byte of bytes) {
+      output += this.base32Alphabet[byte % this.base32Alphabet.length];
+    }
+
+    return output;
+  }
 
   generateTOTP(account: Account): TOTPCode {
     const secret = account.secret;
@@ -95,7 +118,7 @@ class TOTPService {
   }
 
   private base32Decode(input: string): CryptoJS.lib.WordArray {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    const alphabet = this.base32Alphabet;
     const padding = '=';
 
     let output = '';

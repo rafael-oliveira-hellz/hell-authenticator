@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { AppDataSource } from '../config/database';
 import { Account } from '../models/Account';
 import { User } from '../models/User';
@@ -21,6 +22,7 @@ export class AccountService {
   private encryptionService = new EncryptionService();
   private createAccountUseCase: CreateAccountUseCase;
   private getAccountBackupDataUseCase: GetAccountBackupDataUseCase;
+  private readonly base32Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
   constructor() {
     this.createAccountUseCase = new CreateAccountUseCase({
@@ -308,8 +310,10 @@ export class AccountService {
       throw new Error('Account with this name already exists');
     }
 
+    const secret = data.secret ? data.secret.trim().toUpperCase() : this.generateSecret();
+
     const encryptedData = this.encryptionService.encryptAccountData({
-      secret: data.secret,
+      secret,
       metadata: data.metadata
     });
 
@@ -362,8 +366,11 @@ export class AccountService {
       throw new Error('Account name is required');
     }
 
-    if (!data.secret || data.secret.trim().length === 0) {
-      throw new Error('Account secret is required');
+    if (data.secret) {
+      const sanitizedSecret = data.secret.trim().toUpperCase();
+      if (!/^[A-Z2-7]+=*$/.test(sanitizedSecret) || sanitizedSecret.length < 16) {
+        throw new Error('Account secret must be valid Base32 with at least 16 characters');
+      }
     }
 
     if (data.algorithm && !['SHA1', 'SHA256', 'SHA512'].includes(data.algorithm)) {
@@ -387,10 +394,16 @@ export class AccountService {
    * Converte conta para resposta da API
    */
   private accountToResponse(account: Account): AccountResponse {
+    const decryptedData = this.encryptionService.decryptAccountData({
+      secret: account.secret,
+      metadata: account.metadata ?? undefined
+    });
+
     return {
       id: account.id,
       name: account.name,
       issuer: account.issuer ?? undefined,
+      secret: decryptedData.secret,
       algorithm: account.algorithm,
       digits: account.digits,
       period: account.period as TOTPPeriod,
@@ -399,9 +412,13 @@ export class AccountService {
       lastUsedAt: account.lastUsedAt?.toISOString(),
       icon: account.icon ?? undefined,
       color: account.color ?? undefined,
-      metadata: account.metadata ? JSON.parse(this.encryptionService.decrypt(account.metadata)) as AccountMetadata : undefined,
+      metadata: decryptedData.metadata,
       createdAt: account.createdAt.toISOString(),
       updatedAt: account.updatedAt.toISOString()
     };
+  }
+
+  private generateSecret(length: number = 32): string {
+    return Array.from(randomBytes(length), (value) => this.base32Alphabet[value % this.base32Alphabet.length]).join('');
   }
 }

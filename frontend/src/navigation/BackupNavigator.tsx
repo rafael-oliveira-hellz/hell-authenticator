@@ -1,13 +1,12 @@
-import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { BackupStackParamList } from '@/types';
+import React from 'react';
 
-// Importar telas (serão criadas posteriormente)
-import { BackupListScreen } from '@/screens/backup/BackupListScreen';
 import { BackupDetailScreen } from '@/screens/backup/BackupDetailScreen';
+import { BackupListScreen } from '@/screens/backup/BackupListScreen';
+import { CloudSettingsScreen } from '@/screens/backup/CloudSettingsScreen';
 import { CreateBackupScreen } from '@/screens/backup/CreateBackupScreen';
 import { RestoreBackupScreen } from '@/screens/backup/RestoreBackupScreen';
-import { CloudSettingsScreen } from '@/screens/backup/CloudSettingsScreen';
+import { BackupStackParamList } from '@/types';
 
 const Stack = createStackNavigator<BackupStackParamList>();
 
@@ -26,39 +25,39 @@ export const BackupNavigator: React.FC = () => {
       }}
       initialRouteName="BackupList"
     >
-      <Stack.Screen 
-        name="BackupList" 
+      <Stack.Screen
+        name="BackupList"
         component={BackupListScreen}
         options={{
           title: 'Backups',
         }}
       />
-      <Stack.Screen 
-        name="BackupDetail" 
+      <Stack.Screen
+        name="BackupDetail"
         component={BackupDetailScreen}
         options={{
-          title: 'Detalhes do Backup',
+          title: 'Detalhes do backup',
         }}
       />
-      <Stack.Screen 
-        name="CreateBackup" 
+      <Stack.Screen
+        name="CreateBackup"
         component={CreateBackupScreen}
         options={{
-          title: 'Criar Backup',
+          title: 'Criar backup',
         }}
       />
-      <Stack.Screen 
-        name="RestoreBackup" 
+      <Stack.Screen
+        name="RestoreBackup"
         component={RestoreBackupScreen}
         options={{
-          title: 'Restaurar Backup',
+          title: 'Restaurar backup',
         }}
       />
-      <Stack.Screen 
-        name="CloudSettings" 
+      <Stack.Screen
+        name="CloudSettings"
         component={CloudSettingsScreen}
         options={{
-          title: 'Configurações Cloud',
+          title: 'Provedores de nuvem',
         }}
       />
     </Stack.Navigator>

@@ -7,12 +7,19 @@ import {
   ApiResponse,
   AuthTokens,
   Backup,
+  CloudProvider,
+  CloudProviderInfo,
+  ConnectUserCloudProviderData,
   CreateAccountData,
   CreateBackupData,
   LoginCredentials,
   RegisterData,
   RestoreBackupData,
+  StartUserCloudOAuthData,
+  StartUserCloudOAuthResult,
   UpdateAccountData,
+  UserCloudConnection,
+  UserCloudProvider,
   User,
 } from '@/types';
 
@@ -45,7 +52,7 @@ class ApiService {
       async (config) => {
         const netInfo = await NetInfo.fetch();
         if (!netInfo.isConnected) {
-          throw new Error('Sem conexao com a internet');
+          throw new Error('Sem conexão com a internet');
         }
 
         const token = await this.getAccessToken();
@@ -81,14 +88,14 @@ class ApiService {
           try {
             const refreshToken = await this.getRefreshToken();
             if (!refreshToken) {
-              throw new Error('Refresh token nao encontrado');
+              throw new Error('Refresh token não encontrado');
             }
 
             const response = await this.refreshAuthToken(refreshToken);
             const newAccessToken = response.data?.accessToken;
 
             if (!newAccessToken) {
-              throw new Error('Resposta invalida de refresh token');
+              throw new Error('Resposta inválida de refresh token');
             }
 
             await this.setAccessToken(newAccessToken);
@@ -145,7 +152,7 @@ class ApiService {
       }
 
       if (error.message.includes('Network Error')) {
-        return new Error('Nao foi possivel conectar ao backend');
+        return new Error('Não foi possível conectar ao backend');
       }
     }
 
@@ -309,6 +316,31 @@ class ApiService {
     return this.wrapSuccess(response.data.backups ?? response.data);
   }
 
+  async getBackupProviders(): Promise<ApiResponse<CloudProviderInfo[]>> {
+    const response = await this.api.get('/backup/providers');
+    return this.wrapSuccess(response.data.providers ?? response.data);
+  }
+
+  async getUserCloudConnections(): Promise<ApiResponse<UserCloudConnection[]>> {
+    const response = await this.api.get('/backup/user-cloud-connections');
+    return this.wrapSuccess(response.data.connections ?? response.data);
+  }
+
+  async connectUserCloudProvider(data: ConnectUserCloudProviderData): Promise<ApiResponse<UserCloudConnection>> {
+    const response = await this.api.post('/backup/user-cloud-connections/connect', data);
+    return this.wrapSuccess(response.data.connection ?? response.data);
+  }
+
+  async startUserCloudOAuth(data: StartUserCloudOAuthData): Promise<ApiResponse<StartUserCloudOAuthResult>> {
+    const response = await this.api.post('/backup/user-cloud-connections/oauth/start', data);
+    return this.wrapSuccess(response.data);
+  }
+
+  async disconnectUserCloudProvider(provider: UserCloudProvider): Promise<ApiResponse<void>> {
+    const response = await this.api.delete(`/backup/user-cloud-connections/${provider}`);
+    return this.wrapSuccess(response.data);
+  }
+
   async getBackup(backupId: string): Promise<ApiResponse<Backup>> {
     const response = await this.api.get(`/backup/${backupId}`);
     return this.wrapSuccess(response.data.backup ?? response.data);
@@ -324,7 +356,10 @@ class ApiService {
     data: RestoreBackupData
   ): Promise<ApiResponse<{ restoredAccounts: number; skippedAccounts: number }>> {
     const response = await this.api.post(`/backup/${backupId}/restore`, data);
-    return this.wrapSuccess(response.data);
+    return this.wrapSuccess({
+      restoredAccounts: response.data.restoredAccounts ?? response.data.data?.restoredAccounts ?? 0,
+      skippedAccounts: response.data.skippedAccounts ?? response.data.data?.skippedAccounts ?? 0,
+    });
   }
 
   async deleteBackup(backupId: string): Promise<ApiResponse<void>> {
@@ -332,7 +367,7 @@ class ApiService {
     return this.wrapSuccess(response.data);
   }
 
-  async uploadBackupToCloud(backupId: string, cloudProvider: string, cloudPath: string): Promise<ApiResponse<void>> {
+  async uploadBackupToCloud(backupId: string, cloudProvider: CloudProvider, cloudPath: string): Promise<ApiResponse<void>> {
     const response = await this.api.post(`/backup/${backupId}/upload-to-cloud`, {
       cloudProvider,
       cloudPath,
@@ -342,7 +377,7 @@ class ApiService {
 
   async downloadBackupFromCloud(backupId: string): Promise<ApiResponse<string>> {
     const response = await this.api.get(`/backup/${backupId}/download-from-cloud`);
-    return this.wrapSuccess(response.data);
+    return this.wrapSuccess(response.data.data ?? response.data);
   }
 
   async getBackupStats(): Promise<ApiResponse<{

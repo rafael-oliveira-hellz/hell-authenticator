@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedCol
 import { Account } from './Account';
 import { Backup } from './Backup';
 import { Session } from './Session';
+import { UserCloudConnection } from './UserCloudConnection';
 
 @Entity('users')
 @Index(['email'], { unique: true })
@@ -65,7 +66,7 @@ export class User {
     backup: {
       autoBackup: boolean;
       backupFrequency: number;
-      cloudProvider?: 'aws' | 'gcp' | 'azure' | 'dropbox' | 'onedrive';
+      cloudProvider?: 'gcp';
       encryptionEnabled: boolean;
       retentionDays: number;
     };
@@ -85,6 +86,9 @@ export class User {
 
   @OneToMany(() => Session, session => session.user, { cascade: true })
   sessions!: Session[];
+
+  @OneToMany(() => UserCloudConnection, cloudConnection => cloudConnection.user, { cascade: true })
+  cloudConnections!: UserCloudConnection[];
 
   isLocked(): boolean {
     return this.lockedUntil ? new Date() < this.lockedUntil : false;

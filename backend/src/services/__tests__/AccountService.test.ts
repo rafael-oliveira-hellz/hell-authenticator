@@ -59,6 +59,7 @@ describe('AccountService', () => {
         id: 'acc-1',
         name: 'Github',
         issuer: 'GitHub',
+        secret: 'enc-secret',
         algorithm: 'SHA1',
         digits: 6,
         period: 30,
@@ -73,7 +74,10 @@ describe('AccountService', () => {
       }
     ]);
 
-    encryptionMock.decrypt.mockReturnValue('{"category":"work"}');
+    encryptionMock.decryptAccountData.mockReturnValue({
+      secret: 'RAWSECRET',
+      metadata: { category: 'work' }
+    });
 
     const result = await service.listAccounts('user-1');
 
@@ -81,6 +85,7 @@ describe('AccountService', () => {
       where: { userId: 'user-1', isActive: true },
       order: { name: 'ASC' }
     });
+    expect(result[0].secret).toBe('RAWSECRET');
     expect(result[0].metadata).toEqual({ category: 'work' });
   });
 
@@ -166,6 +171,11 @@ describe('AccountService', () => {
 
     accountRepository.save.mockResolvedValue(undefined);
 
+    encryptionMock.decryptAccountData.mockReturnValue({
+      secret: 'JBSWY3DPEHPK3PXP',
+      metadata: undefined
+    });
+
     const result = await service.createAccount('user-1', {
       name: 'Github',
       secret: 'JBSWY3DPEHPK3PXP',
@@ -173,7 +183,59 @@ describe('AccountService', () => {
     });
 
     expect(result.id).toBe('acc-1');
+    expect(result.secret).toBe('JBSWY3DPEHPK3PXP');
     expect(accountRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('creates account with generated secret when request omits it', async () => {
+    const service = createService();
+
+    userRepository.findOne.mockResolvedValue({ id: 'user-1', isActive: true });
+    accountRepository.findOne.mockResolvedValue(null);
+
+    encryptionMock.encryptAccountData.mockReturnValue({
+      secret: 'enc-secret',
+      metadata: undefined
+    });
+    encryptionMock.decryptAccountData.mockReturnValue({
+      secret: 'GENERATEDSECRETBASE32VALUE123456',
+      metadata: undefined
+    });
+
+    const createdAt = new Date();
+    const updatedAt = new Date();
+
+    accountRepository.create.mockReturnValue({
+      id: 'acc-generated',
+      name: 'Discord',
+      issuer: null,
+      secret: 'enc-secret',
+      algorithm: 'SHA1',
+      digits: 6,
+      period: 30,
+      isActive: true,
+      usageCount: 0,
+      lastUsedAt: null,
+      icon: null,
+      color: null,
+      metadata: null,
+      createdAt,
+      updatedAt
+    });
+
+    accountRepository.save.mockResolvedValue(undefined);
+
+    const result = await service.createAccount('user-1', {
+      name: 'Discord',
+      period: 30
+    });
+
+    expect(encryptionMock.encryptAccountData).toHaveBeenCalledWith(
+      expect.objectContaining({
+        secret: expect.stringMatching(/^[A-Z2-7]{32}$/)
+      })
+    );
+    expect(result.secret).toBe('GENERATEDSECRETBASE32VALUE123456');
   });
 
   it('updates account and encrypts metadata when provided', async () => {
@@ -184,6 +246,7 @@ describe('AccountService', () => {
       userId: 'user-1',
       name: 'Github',
       issuer: null,
+      secret: 'enc-secret',
       algorithm: 'SHA1',
       digits: 6,
       period: 30,
@@ -202,6 +265,10 @@ describe('AccountService', () => {
       .mockResolvedValueOnce(null);
 
     encryptionMock.encrypt.mockReturnValue('enc-meta');
+    encryptionMock.decryptAccountData.mockReturnValue({
+      secret: 'RAWSECRET',
+      metadata: { category: 'work' }
+    });
     accountRepository.save.mockResolvedValue(undefined);
 
     await service.updateAccount('user-1', 'acc-1', {
@@ -330,7 +397,10 @@ describe('AccountService', () => {
     });
 
     accountRepository.save.mockImplementation(async (value: unknown) => value);
-    encryptionMock.decrypt.mockReturnValue('{"category":"work"}');
+    encryptionMock.decryptAccountData.mockReturnValue({
+      secret: 'RAWSECRET',
+      metadata: { category: 'work' }
+    });
 
     const metadata = { category: 'work' };
 
@@ -358,6 +428,7 @@ describe('AccountService', () => {
           id: 'acc-1',
           name: 'Github',
           issuer: 'GitHub',
+          secret: 'enc-secret',
           algorithm: 'SHA1',
           digits: 6,
           period: 30,
@@ -374,11 +445,16 @@ describe('AccountService', () => {
     };
 
     accountRepository.createQueryBuilder.mockReturnValue(builder);
+    encryptionMock.decryptAccountData.mockReturnValue({
+      secret: 'RAWSECRET',
+      metadata: undefined
+    });
 
     const result = await service.searchAccounts('user-1', 'git');
 
     expect(builder.where).toHaveBeenCalled();
     expect(result.length).toBe(1);
+    expect(result[0].secret).toBe('RAWSECRET');
   });
 
   it('returns account stats with most used account', async () => {
@@ -389,6 +465,7 @@ describe('AccountService', () => {
         id: 'a1',
         name: 'Github',
         issuer: 'GitHub',
+        secret: 'enc-a1',
         algorithm: 'SHA1',
         digits: 6,
         period: 30,
@@ -405,6 +482,7 @@ describe('AccountService', () => {
         id: 'a2',
         name: 'Gitlab',
         issuer: 'GitLab',
+        secret: 'enc-a2',
         algorithm: 'SHA1',
         digits: 6,
         period: 30,
@@ -418,11 +496,13 @@ describe('AccountService', () => {
         updatedAt: new Date()
       }
     ]);
+    encryptionMock.decryptAccountData.mockReturnValue({ secret: 'RAW-A2', metadata: undefined });
 
     const stats = await service.getAccountStats('user-1');
 
     expect(stats.total).toBe(2);
     expect(stats.totalUsage).toBe(13);
     expect(stats.mostUsed?.id).toBe('a2');
+    expect(stats.mostUsed?.secret).toBe('RAW-A2');
   });
 });

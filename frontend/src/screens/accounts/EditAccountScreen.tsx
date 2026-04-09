@@ -40,7 +40,7 @@ export const EditAccountScreen: React.FC = () => {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Validacao', 'Nome da conta e obrigatorio.');
+      Alert.alert('Validação', 'Nome da conta é obrigatório.');
       return;
     }
 
@@ -57,7 +57,7 @@ export const EditAccountScreen: React.FC = () => {
       Alert.alert('Sucesso', 'Conta atualizada com sucesso.');
       navigation.goBack();
     } catch {
-      Alert.alert('Erro', 'Nao foi possivel atualizar a conta.');
+      Alert.alert('Erro', 'Não foi possível atualizar a conta.');
     }
   };
 
@@ -74,7 +74,7 @@ export const EditAccountScreen: React.FC = () => {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.scroll}>
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.title, { color: colors.text }]}>Editar Conta</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Editar conta</Text>
 
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Nome</Text>
@@ -88,11 +88,11 @@ export const EditAccountScreen: React.FC = () => {
         </View>
 
         <View style={styles.field}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Issuer</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Emissor</Text>
           <TextInput
             value={issuer}
             onChangeText={setIssuer}
-            placeholder="Issuer"
+            placeholder="Ex.: Google Workspace"
             placeholderTextColor={colors.textSecondary}
             style={[styles.input, { color: colors.text, borderColor: colors.border }]}
           />
@@ -114,7 +114,7 @@ export const EditAccountScreen: React.FC = () => {
         </View>
 
         <View style={styles.field}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Digitos</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Dígitos</Text>
           <View style={styles.choiceRow}>
             {[6, 8].map((item) => (
               <TouchableOpacity
@@ -129,7 +129,7 @@ export const EditAccountScreen: React.FC = () => {
         </View>
 
         <View style={styles.field}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Periodo (s)</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Período (s)</Text>
           <View style={styles.choiceRow}>
             {[15, 30, 60].map((item) => (
               <TouchableOpacity
@@ -148,7 +148,7 @@ export const EditAccountScreen: React.FC = () => {
           onPress={handleSave}
           disabled={updateMutation.isPending}
         >
-          <Text style={styles.saveButtonText}>{updateMutation.isPending ? 'Salvando...' : 'Salvar alteracoes'}</Text>
+          <Text style={styles.saveButtonText}>{updateMutation.isPending ? 'Salvando...' : 'Salvar alterações'}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

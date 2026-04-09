@@ -3,6 +3,7 @@ import { env, getDatabaseConfig } from './environment';
 import { Account } from '../models/Account';
 import { Backup } from '../models/Backup';
 import { Session } from '../models/Session';
+import { UserCloudConnection } from '../models/UserCloudConnection';
 import { User } from '../models/User';
 import { logger } from '../utils/logger';
 
@@ -20,7 +21,7 @@ export const AppDataSource = new DataSource({
   database: dbConfig.database,
   synchronize: env.NODE_ENV === 'development',
   logging: env.NODE_ENV === 'development',
-  entities: [User, Account, Backup, Session],
+  entities: [User, Account, Backup, Session, UserCloudConnection],
   migrations: [
     'src/migrations/*.migration.ts',
     'dist/migrations/*.migration.js'
