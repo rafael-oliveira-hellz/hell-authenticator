@@ -1,219 +1,316 @@
 # Hell Authenticator Backend
 
-Backend API para o Hell Authenticator, construído com Fastify, TypeScript e PostgreSQL.
+The backend package powers the Hell Authenticator API. It is built with Fastify, TypeScript, PostgreSQL, Redis, and TypeORM, and exposes endpoints for authentication, account management, backup flows, health checks, and operational tooling.
 
-## 🚀 Tecnologias
+## Contents
 
-- **Fastify**: Framework web rápido e eficiente
-- **TypeScript**: Tipagem estática
-- **PostgreSQL**: Banco de dados relacional
-- **Redis**: Cache e sessões
-- **TypeORM**: ORM para PostgreSQL
-- **JWT**: Autenticação
-- **Prometheus**: Métricas e monitoramento
-- **Docker**: Containerização
+- [Overview](#overview)
+- [Stack](#stack)
+- [Project Layout](#project-layout)
+- [Prerequisites](#prerequisites)
+- [Environment Variables](#environment-variables)
+- [Installation](#installation)
+- [Running the Service](#running-the-service)
+- [Database and Seed Workflow](#database-and-seed-workflow)
+- [Docker](#docker)
+- [API Surface](#api-surface)
+- [Security Notes](#security-notes)
+- [Scripts](#scripts)
+- [Testing](#testing)
+- [Observability](#observability)
+- [Troubleshooting](#troubleshooting)
 
-## 📋 Pré-requisitos
+## Overview
 
-- Node.js 18+
-- Docker e Docker Compose
-- PostgreSQL (via Docker)
-- Redis (via Docker)
+This package provides:
 
-## 🛠️ Instalação
+- user registration and login
+- JWT-based authentication
+- refresh token rotation
+- session tracking with Redis and an audit session store
+- account and backup domain APIs
+- health endpoints and Swagger documentation
+- structured logging and Prometheus metrics
 
-1. **Clonar o repositório**
-```bash
-git clone <repository-url>
-cd hell-authenticator/backend
+Entry point:
+
+- [src/app.ts](E:\08%20-%20Hell%20Authenticator\backend\src\app.ts)
+
+## Stack
+
+- Fastify
+- TypeScript
+- TypeORM
+- PostgreSQL
+- Redis
+- bcrypt
+- jsonwebtoken
+- Winston
+- Jest
+
+## Project Layout
+
+```text
+backend/
+├── src/
+│   ├── app.ts
+│   ├── application/
+│   ├── config/
+│   ├── middlewares/
+│   ├── migrations/
+│   ├── models/
+│   ├── routes/
+│   ├── scripts/
+│   ├── services/
+│   ├── types/
+│   └── utils/
+├── .env.example
+├── Dockerfile.dev
+├── jest.config.js
+├── package.json
+└── tsconfig.json
 ```
 
-2. **Instalar dependências**
+Important paths:
+
+- [src/routes/auth.ts](E:\08%20-%20Hell%20Authenticator\backend\src\routes\auth.ts)
+- [src/routes/accounts.ts](E:\08%20-%20Hell%20Authenticator\backend\src\routes\accounts.ts)
+- [src/routes/backup.ts](E:\08%20-%20Hell%20Authenticator\backend\src\routes\backup.ts)
+- [src/config/database.ts](E:\08%20-%20Hell%20Authenticator\backend\src\config\database.ts)
+- [src/config/environment.ts](E:\08%20-%20Hell%20Authenticator\backend\src\config\environment.ts)
+- [src/services/AuthService.ts](E:\08%20-%20Hell%20Authenticator\backend\src\services\AuthService.ts)
+- [src/scripts/seed.ts](E:\08%20-%20Hell%20Authenticator\backend\src\scripts\seed.ts)
+
+## Prerequisites
+
+- Node.js `>= 18`
+- npm `>= 8`
+- PostgreSQL
+- Redis
+- Docker Desktop recommended for local infrastructure
+
+## Environment Variables
+
+The recommended starting point is:
+
+- [backend/.env.example](E:\08%20-%20Hell%20Authenticator\backend\.env.example)
+
+Critical variables include:
+
+- `PORT`
+- `DB_HOST`
+- `DB_PORT`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_NAME`
+- `REDIS_HOST`
+- `REDIS_PORT`
+- `REDIS_PASSWORD`
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
+- `JWT_REFRESH_EXPIRES_IN`
+- `ENCRYPTION_KEY`
+
+`ENCRYPTION_KEY` must be valid according to the runtime validation rules:
+
+- either 64 hexadecimal characters
+- or 32 UTF-8 characters
+
+## Installation
+
 ```bash
+cd backend
 npm install
+cp .env.example .env
 ```
 
-3. **Configurar variáveis de ambiente**
-```bash
-cp env.example .env
-# Editar .env com suas configurações
-```
+Edit `.env` to match your local setup.
 
-4. **Iniciar serviços com Docker Compose**
-```bash
-# Na raiz do projeto
-docker-compose up -d postgres redis prometheus grafana localstack
-```
+## Running the Service
 
-5. **Executar migrações**
-```bash
-npm run migrate
-```
+### Development
 
-6. **Iniciar em modo desenvolvimento**
 ```bash
+cd backend
 npm run dev
 ```
 
-## 🏃‍♂️ Scripts Disponíveis
-
-- `npm run dev`: Inicia em modo desenvolvimento com hot-reload
-- `npm run build`: Compila o projeto
-- `npm run start`: Inicia em modo produção
-- `npm run test`: Executa testes
-- `npm run lint`: Verifica código com ESLint
-- `npm run type-check`: Verifica tipos TypeScript
-- `npm run migrate`: Executa migrações do banco
-- `npm run seed`: Popula banco com dados de teste
-
-## 📁 Estrutura do Projeto
-
-```
-src/
-├── config/          # Configurações
-│   ├── database.ts  # Configuração do banco
-│   └── environment.ts # Variáveis de ambiente
-├── models/          # Entidades TypeORM
-│   ├── User.ts
-│   ├── Account.ts
-│   ├── Backup.ts
-│   └── Session.ts
-├── plugins/         # Plugins Fastify
-│   ├── cors.ts
-│   ├── helmet.ts
-│   ├── prometheus.ts
-│   ├── rate-limit.ts
-│   └── swagger.ts
-├── routes/          # Rotas da API
-│   ├── auth.ts
-│   ├── accounts.ts
-│   ├── backup.ts
-│   └── health.ts
-├── services/        # Lógica de negócio
-├── types/           # Tipos TypeScript
-│   └── index.ts
-├── utils/           # Utilitários
-└── app.ts           # Aplicação principal
-```
-
-## 🔧 Configuração
-
-### Variáveis de Ambiente
-
-Copie `env.example` para `.env` e configure:
-
-```env
-# Ambiente
-NODE_ENV=development
-PORT=3000
-
-# Banco de dados
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=hell_auth_user
-DB_PASSWORD=hell_auth_password
-DB_NAME=hell_auth_dev
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=hell_auth_redis_password
-
-# JWT
-JWT_SECRET=sua_chave_secreta_muito_longa
-JWT_EXPIRES_IN=60m
-
-# Criptografia
-ENCRYPTION_KEY=chave_de_32_caracteres_exata
-```
-
-## 📊 Monitoramento
-
-- **Health Check**: `GET /health`
-- **Métricas Prometheus**: `GET /metrics`
-- **Documentação Swagger**: `GET /docs`
-
-## 🔒 Segurança
-
-- Rate limiting global
-- Headers de segurança (Helmet)
-- CORS configurado
-- Validação de entrada com JSON Schema
-- Criptografia AES-256 para dados sensíveis
-
-## 🧪 Testes
+### Production build
 
 ```bash
-# Executar todos os testes
-npm test
-
-# Executar com coverage
-npm run test:coverage
-
-# Executar em modo watch
-npm run test:watch
-```
-
-## 🐳 Docker
-
-```bash
-# Build da imagem
-docker build -t hell-auth-backend .
-
-# Executar container
-docker run -p 3000:3000 hell-auth-backend
-```
-
-## 📈 Métricas
-
-O backend expõe métricas Prometheus em `/metrics`:
-
-- `http_request_duration_seconds`: Duração das requisições
-- `http_requests_total`: Total de requisições
-- `http_requests_in_progress`: Requisições em andamento
-
-## 🔄 Migrações
-
-```bash
-# Gerar nova migração
-npm run migrate:generate
-
-# Executar migrações
-npm run migrate
-
-# Reverter última migração
-npm run migrate:revert
-```
-
-## 📝 Logs
-
-Logs estruturados com Winston:
-
-- **Development**: Pretty print colorido
-- **Production**: JSON estruturado
-- **Níveis**: error, warn, info, debug
-
-## 🚀 Deploy
-
-1. Build da aplicação
-2. Configurar variáveis de produção
-3. Executar migrações
-4. Iniciar aplicação
-
-```bash
+cd backend
 npm run build
-NODE_ENV=production npm start
+npm run start
 ```
 
-## 🤝 Contribuição
+Default local endpoints:
 
-1. Fork o projeto
-2. Crie uma branch para sua feature
-3. Commit suas mudanças
-4. Push para a branch
-5. Abra um Pull Request
+- API root: `http://localhost:3000/api`
+- Health check: `http://localhost:3000/health`
+- Swagger UI: `http://localhost:3000/docs`
 
-## 📄 Licença
+## Database and Seed Workflow
 
-MIT License - veja [LICENSE](../LICENSE) para detalhes.
+Run migrations:
 
+```bash
+cd backend
+npm run migrate
+```
+
+Seed the database:
+
+```bash
+cd backend
+npm run seed
+```
+
+The seed script is designed to be idempotent so it can be rerun during local setup without duplicating the same records.
+
+Migration generation:
+
+```bash
+cd backend
+npm run migrate:generate -- <migration-name>
+```
+
+## Docker
+
+The backend is usually run with the root Compose file:
+
+- [docker-compose.yml](E:\08%20-%20Hell%20Authenticator\docker-compose.yml)
+
+To start the full local stack:
+
+```bash
+cd ..
+docker compose up -d postgres redis localstack backend
+```
+
+To watch backend logs:
+
+```bash
+docker compose logs -f backend
+```
+
+To rebuild the backend container:
+
+```bash
+docker compose up -d --build backend
+```
+
+Package-local Docker scripts:
+
+```bash
+cd backend
+npm run docker:build
+npm run docker:run
+```
+
+## API Surface
+
+Current route groups include:
+
+- `/api/auth`
+- `/api/accounts`
+- `/api/backup`
+- `/health`
+- `/docs`
+
+Examples:
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `GET /api/auth/me`
+- `GET /api/accounts`
+- `POST /api/backup`
+
+## Security Notes
+
+The backend includes:
+
+- password hashing with bcrypt
+- JWT access and refresh tokens
+- Redis-backed session control
+- refresh token rotation
+- Fastify schema validation
+- Helmet security headers
+- rate limiting
+- encrypted handling for sensitive account and backup data
+
+Operational rule of thumb:
+
+- do not log passwords
+- do not log tokens
+- do not log encryption secrets
+
+## Scripts
+
+Available `package.json` scripts:
+
+- `npm run dev`
+- `npm run build`
+- `npm run start`
+- `npm run test`
+- `npm run test:watch`
+- `npm run test:coverage`
+- `npm run lint`
+- `npm run lint:fix`
+- `npm run type-check`
+- `npm run migrate`
+- `npm run migrate:generate`
+- `npm run seed`
+- `npm run docker:build`
+- `npm run docker:run`
+
+## Testing
+
+Run the full backend validation set:
+
+```bash
+cd backend
+npm run lint
+npm run type-check
+npm test
+```
+
+Coverage:
+
+```bash
+cd backend
+npm run test:coverage
+```
+
+## Observability
+
+The backend exposes:
+
+- `GET /health`
+- `GET /docs`
+- Prometheus metrics when enabled
+
+The root Docker Compose can also start:
+
+- Prometheus
+- Grafana
+
+using the `observability` profile.
+
+## Troubleshooting
+
+### `Cannot create a "default" connection because connection to the database already established`
+
+This was addressed by making database initialization idempotent in the backend configuration. If you still see it, restart the backend service after pulling the latest code.
+
+### `ENCRYPTION_KEY must be 64-char hex or 32-char UTF-8 string`
+
+Fix the value in `.env` and restart the backend container or dev server.
+
+### Migrations fail because helper scripts are treated as migrations
+
+Only files matching the migration naming pattern should be loaded. Make sure you are running the latest backend configuration and keep helper scripts outside the migration glob.
+
+### Seed works inconsistently
+
+Use the latest `seed.ts` implementation and rerun `npm run seed`. The current seed is intended to be safe to rerun during local development.
